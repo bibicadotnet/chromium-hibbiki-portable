@@ -2,8 +2,8 @@ name: Update WidevineCdm
 
 on:
   schedule:
-    - cron: "0 * * * *"   # chạy mỗi giờ
-  workflow_dispatch:      # cho phép chạy tay
+    - cron: "0 * * * *"   # chạy mỗi tiếng
+  workflow_dispatch:
 
 jobs:
   update:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Download latest Edge Canary Portable
+      - name: Download Edge Canary Portable mới nhất
         run: |
           url=$(curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases/latest \
             | grep browser_download_url \
@@ -21,21 +21,22 @@ jobs:
             | cut -d '"' -f 4)
           echo "Download URL: $url"
           curl -L "$url" -o edge-canary.zip
-          unzip -q edge-canary.zip -d edge-canary
+          7z x -y edge-canary.zip -oedge-canary > /dev/null
 
-      - name: Compare Widevine versions
+      - name: So sánh version Widevine
         id: compare
         run: |
-          NEW_MANIFEST=$(find edge-canary -path "*/WidevineCdm/manifest.json" | head -n1)
+          NEW_MANIFEST=$(find edge-canary -iname manifest.json | grep WidevineCdm | head -n1)
           OLD_MANIFEST="WidevineCdm/manifest.json"
 
           if [ ! -f "$NEW_MANIFEST" ]; then
-            echo "Không tìm thấy manifest mới"
-            exit 1
+            echo "Không tìm thấy WidevineCdm trong bản tải về"
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
           new_version=$(jq -r '.version' "$NEW_MANIFEST")
-          old_version=$(jq -r '.version' "$OLD_MANIFEST")
+          old_version=$(jq -r '.version' "$OLD_MANIFEST" 2>/dev/null || echo "0")
 
           echo "new_version=$new_version"
           echo "old_version=$old_version"
@@ -47,14 +48,14 @@ jobs:
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update WidevineCdm
+      - name: Cập nhật WidevineCdm
         if: steps.compare.outputs.update_needed == 'true'
         run: |
-          NEW_WIDEVINE=$(dirname $(find edge-canary -path "*/WidevineCdm/manifest.json" | head -n1))
+          NEW_WIDEVINE=$(dirname $(find edge-canary -iname manifest.json | grep WidevineCdm | head -n1))
           rm -rf WidevineCdm
           cp -r "$NEW_WIDEVINE" ./WidevineCdm
 
-      - name: Commit & push
+      - name: Commit & Push
         if: steps.compare.outputs.update_needed == 'true'
         run: |
           git config user.name "github-actions[bot]"
