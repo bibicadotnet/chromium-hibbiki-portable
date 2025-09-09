@@ -12,66 +12,74 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Tạo thư mục
-      run: mkdir Chromium_Portable
-
-    - name: Tải Chromium
+    - name: Get latest versions
       run: |
-        $url = (Invoke-RestMethod "https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest").assets[0].browser_download_url
-        curl -sSL $url -o chrome.7z
+        $chromium_url = (Invoke-RestMethod "https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest").assets[0].browser_download_url
+        $plus_ver = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").tag_name
+        echo "CHROMIUM_URL=$chromium_url" >> $env:GITHUB_ENV
+        echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
 
-    - name: Tải và giải nén
+    - name: Check if release exists
       run: |
+        $tag_name = "portable-${{ env.PLUS_VER }}"
+        $release_exists = gh release view $tag_name 2>&1
+        if ($LASTEXITCODE -eq 0) {
+          echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
+          echo "Release $tag_name already exists, skipping build"
+        } else {
+          echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
+        }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Chromium Portable
+      if: env.RELEASE_EXISTS == 'false'
+      run: |
+        # Tạo thư mục
+        mkdir Chromium_Portable
+
+        # Tải và giải nén Chromium
+        curl -sSL "${{ env.CHROMIUM_URL }}" -o chrome.7z
         curl -sSL https://www.7-zip.org/a/7zr.exe -o 7zr.exe
         ./7zr.exe x chrome.7z
 
-    - name: Đổi tên và di chuyển
-      run: |
+        # Đổi tên và di chuyển
         mv Chrome-bin Chromium
         mv Chromium Chromium_Portable/
 
-    - name: Tải chrome_plus
-      run: |
-        $url = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").assets[0].browser_download_url
-        curl -sSL $url -o chrome_plus.7z
+        # Tải và giải nén chrome_plus
+        $plus_url = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").assets[0].browser_download_url
+        curl -sSL $plus_url -o chrome_plus.7z
         ./7zr.exe x chrome_plus.7z
 
-    - name: Copy version.dll
-      run: |
+        # Copy version.dll
         $dll = Get-ChildItem -Recurse -Filter "version.dll" | Select -First 1
         cp $dll.FullName Chromium_Portable/Chromium/
 
-    - name: Copy config files
-      run: |
+        # Copy config files
         cp chrome++.ini Chromium_Portable/Chromium/
         cp debloater.reg Chromium_Portable/Chromium/
         cp default-apps-multi-profile.bat Chromium_Portable/Chromium/
 
-    - name: Lấy version Chromium
-      run: |
+        # Lấy version Chromium
         $ver = (Get-Item "Chromium_Portable/Chromium/chrome.exe").VersionInfo.ProductVersion
         echo "CHROMIUM_VER=$ver" >> $env:GITHUB_ENV
 
-    - name: Copy WidevineCdm
-      run: |
+        # Copy WidevineCdm
+        mkdir -p "Chromium_Portable/Chromium/$env:CHROMIUM_VER"
         cp -r WidevineCdm "Chromium_Portable/Chromium/$env:CHROMIUM_VER/"
 
-    - name: Lấy version chrome_plus
-      run: |
-        $plus_ver = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").tag_name
-        echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
-
-    - name: Nén thành zip
-      run: |
+        # Nén thành zip với tên đúng format
         $zip_name = "chromium-portable-x64_$env:CHROMIUM_VER_$env:PLUS_VER.zip"
         Compress-Archive -Path Chromium_Portable -DestinationPath $zip_name
         echo "ZIP_NAME=$zip_name" >> $env:GITHUB_ENV
 
-    - name: Tạo Release
+    - name: Create Release
+      if: env.RELEASE_EXISTS == 'false'
       uses: softprops/action-gh-release@v1
       with:
         files: ${{ env.ZIP_NAME }}
-        tag_name: portable-${{ env.CHROMIUM_VER }}-${{ env.PLUS_VER }}
-        name: Chromium Portable ${{ env.CHROMIUM_VER }}
+        tag_name: chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
+        name: ${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
