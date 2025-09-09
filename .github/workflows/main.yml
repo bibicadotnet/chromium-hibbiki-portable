@@ -54,7 +54,6 @@ jobs:
 
     - name: Copy WidevineCdm
       run: |
-        mkdir -p "Chromium_Portable/Chromium/$env:CHROMIUM_VER"
         cp -r WidevineCdm "Chromium_Portable/Chromium/$env:CHROMIUM_VER/"
 
     - name: Lấy version chrome_plus
