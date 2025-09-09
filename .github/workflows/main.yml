@@ -36,12 +36,15 @@ jobs:
       run: |
         $tag_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}"
         echo "REL=$tag_name" >> $env:GITHUB_ENV
-        $r = gh api -X GET repos/${{ github.repository }}/releases/tags/$tag_name --jq ".message" 2>$null
-        if ($r -eq "Not Found") {
+        $url = "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag_name"
+        $r = Invoke-RestMethod -Uri $url -Headers @{Authorization="Bearer $env:GITHUB_TOKEN"} -ErrorAction SilentlyContinue
+        if ($null -eq $r) {
+          echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
+        } elseif ($r.message -eq "Not Found") {
           echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
         } else {
           echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
-          echo "Release $tag_name already exists, skipping build"
+          Write-Output "Release $tag_name already exists, skipping build"
         }
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
