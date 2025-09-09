@@ -20,7 +20,7 @@ jobs:
         
     - name: Extract and check version
       run: |
-        unzip -q edge.zip -d downloaded/
+        7z x edge.zip -odownloaded/
         
         NEW_MANIFEST=$(find downloaded -name manifest.json -path "*/WidevineCdm/*")
         NEW_VERSION=$(jq -r '.version' "$NEW_MANIFEST")
