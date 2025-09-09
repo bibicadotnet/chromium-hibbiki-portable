@@ -1,0 +1,198 @@
+name: Chromium Hibbiki Portable Auto Builder
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Chạy mỗi giờ
+  workflow_dispatch:  # Cho phép chạy thủ công
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  check-and-build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download and Install Chromium
+      id: chromium-install
+      shell: powershell
+      run: |
+        try {
+          $release = Invoke-RestMethod "https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest"
+          $chromeAsset = $release.assets | Where-Object name -eq "chrome.7z"
+          $chromeUrl = $chromeAsset.browser_download_url
+          $chromeZip = "$env:TEMP\chrome.7z"
+          
+          Write-Host "Downloading Chromium..." -ForegroundColor Yellow
+          (New-Object System.Net.WebClient).DownloadFile($chromeUrl, $chromeZip)
+          
+          # Download 7zr.exe
+          (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/a/7zr.exe", "$env:TEMP\7zr.exe")
+          
+          # Extract Chromium
+          Write-Host "Extracting Chromium..." -ForegroundColor Yellow
+          $extractPath = "$env:TEMP\chrome_extract"
+          New-Item -ItemType Directory -Path $extractPath -Force | Out-Null
+          & "$env:TEMP\7zr.exe" x $chromeZip -o"$extractPath" -y | Out-Null
+          
+          # Find Chrome-bin and copy to Program Files
+          $chromeBin = Get-ChildItem -Path $extractPath -Recurse -Directory -Name "Chrome-bin" | Select-Object -First 1
+          $targetPath = "C:\Program Files\Chromium\Application"
+          New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+          Copy-Item (Join-Path $extractPath $chromeBin "\*") $targetPath -Recurse -Force
+          
+          echo "CHROMIUM_VERSION=$($release.tag_name)" >> $env:GITHUB_OUTPUT
+          
+        } catch {
+          Write-Error "Failed to install Chromium: $($_.Exception.Message)"
+          exit 1
+        }
+        
+    - name: Get Chrome++ version
+      id: chromeplus-version
+      shell: powershell
+      run: |
+        try {
+          $chromePlusRelease = Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest"
+          $chromePlusVersion = $chromePlusRelease.tag_name
+          echo "CHROMEPLUS_VERSION=$chromePlusVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "Chrome++ version: $chromePlusVersion"
+        } catch {
+          Write-Error "Failed to get Chrome++ version: $($_.Exception.Message)"
+          exit 1
+        }
+        
+    - name: Check if release exists
+      id: check-release
+      shell: powershell
+      run: |
+        $releaseTag = "chromium-portable-x64_${{ steps.chromium-install.outputs.CHROMIUM_VERSION }}_${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}"
+        echo "RELEASE_TAG=$releaseTag" >> $env:GITHUB_OUTPUT
+        
+        try {
+          $headers = @{
+            'Authorization' = 'token ${{ secrets.GITHUB_TOKEN }}'
+            'Accept' = 'application/vnd.github.v3+json'
+          }
+          $response = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/tags/$releaseTag" -Headers $headers -ErrorAction Stop
+          echo "RELEASE_EXISTS=true" >> $env:GITHUB_OUTPUT
+          Write-Host "Release $releaseTag already exists"
+        } catch {
+          if ($_.Exception.Response.StatusCode -eq 404) {
+            echo "RELEASE_EXISTS=false" >> $env:GITHUB_OUTPUT
+            Write-Host "Release $releaseTag does not exist, will create new one"
+          } else {
+            Write-Error "Error checking release: $($_.Exception.Message)"
+            exit 1
+          }
+        }
+        
+    - name: Build Chromium Portable
+      if: steps.check-release.outputs.RELEASE_EXISTS == 'false'
+      shell: powershell
+      run: |
+        Write-Host "Building Chromium Portable with Chrome++" -ForegroundColor Green
+        
+        $rootPath = "$env:GITHUB_WORKSPACE\Chromium_Portable"
+        $portablePath = "$rootPath\Chrome"
+        $applicationPath = "C:\Program Files\Chromium\Application"
+        
+        # Prepare directories
+        if (Test-Path $rootPath) { Remove-Item $rootPath -Recurse -Force }
+        New-Item -ItemType Directory -Path $rootPath -Force | Out-Null
+        New-Item -ItemType Directory -Path $portablePath -Force | Out-Null
+        
+        # Download Chrome++
+        Write-Host "Installing Chrome++..." -ForegroundColor Yellow
+        $chromePlusRelease = Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest"
+        $chromePlusAsset = $chromePlusRelease.assets | Where-Object { $_.name -like "*Chrome*x86_x64_arm64.7z" }
+        $chromePlusZip = "$env:TEMP\chrome_plus.7z"
+        (New-Object System.Net.WebClient).DownloadFile($chromePlusAsset.browser_download_url, $chromePlusZip)
+        
+        # Extract Chrome++
+        $chromePlusExtract = "$env:TEMP\chrome_plus_extract"
+        New-Item -ItemType Directory -Path $chromePlusExtract -Force | Out-Null
+        & "$env:TEMP\7zr.exe" x $chromePlusZip -o"$chromePlusExtract" -y | Out-Null
+        
+        # Install Chrome++ to Application
+        $appPath = Get-ChildItem -Path $chromePlusExtract -Recurse -Directory | Where-Object { $_.FullName -like "*\x64\App" } | Select-Object -First 1
+        Copy-Item (Join-Path $appPath.FullName "version.dll") $applicationPath -Force
+        
+        # Copy config files
+        Copy-Item "$env:GITHUB_WORKSPACE\chrome++.ini" "$applicationPath\chrome++.ini" -Force -ErrorAction SilentlyContinue
+        
+        # Install Widevine CDM from GitHub repo (Google CDN no longer works)
+        Write-Host "Installing WidevineCdm..." -ForegroundColor Yellow
+        try {
+          # Use the existing working source
+          $widevineZip = "$env:TEMP\WidevineCdm.7z"
+          (New-Object System.Net.WebClient).DownloadFile("https://github.com/bibicadotnet/chromium-hibbiki-portable/raw/main/WidevineCdm.7z", $widevineZip)
+          
+          $widevineExtract = "$env:TEMP\widevine_extract"
+          if (Test-Path $widevineExtract) { Remove-Item $widevineExtract -Recurse -Force }
+          New-Item -ItemType Directory -Path $widevineExtract -Force | Out-Null
+          & "$env:TEMP\7zr.exe" x $widevineZip -o"$widevineExtract" -y | Out-Null
+          
+          # Install to correct location
+          $version = "${{ steps.chromium-install.outputs.CHROMIUM_VERSION }}" -replace '^v(\d+\.\d+\.\d+\.\d+).*', '$1'
+          $versionPath = Join-Path $applicationPath $version
+          if (-not (Test-Path $versionPath)) { New-Item -ItemType Directory -Path $versionPath -Force | Out-Null }
+          Copy-Item (Join-Path $widevineExtract "WidevineCdm") (Join-Path $versionPath "WidevineCdm") -Recurse -Force
+          
+          Write-Host "Widevine CDM installed successfully"
+        } catch {
+          Write-Warning "Failed to install Widevine CDM: $($_.Exception.Message)"
+          Write-Host "Continuing without Widevine support"
+        }
+        
+        # Copy to portable directory
+        Write-Host "Creating portable package..." -ForegroundColor Yellow
+        Copy-Item "$applicationPath\*" $portablePath -Recurse -Force
+        
+        Write-Host "Build completed!" -ForegroundColor Green
+        
+    - name: Create ZIP archive
+      if: steps.check-release.outputs.RELEASE_EXISTS == 'false'
+      shell: powershell
+      run: |
+        $releaseTag = "${{ steps.check-release.outputs.RELEASE_TAG }}"
+        $zipPath = "$env:GITHUB_WORKSPACE\$releaseTag.zip"
+        $sourcePath = "$env:GITHUB_WORKSPACE\Chromium_Portable"
+        
+        Compress-Archive -Path $sourcePath -DestinationPath $zipPath -CompressionLevel Optimal
+        Write-Host "Created archive: $zipPath"
+        
+        echo "ARCHIVE_PATH=$zipPath" >> $env:GITHUB_OUTPUT
+      id: create-archive
+        
+    - name: Create Release and Upload Asset
+      if: steps.check-release.outputs.RELEASE_EXISTS == 'false'
+      shell: powershell
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        $releaseTag = "${{ steps.check-release.outputs.RELEASE_TAG }}"
+        $chromiumVersion = "${{ steps.chromium-install.outputs.CHROMIUM_VERSION }}"
+        $chromePlusVersion = "${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}"
+        $archivePath = "${{ steps.create-archive.outputs.ARCHIVE_PATH }}"
+        
+        $releaseBody = "**Chromium Hibbiki Portable with Chrome++ Auto Build**`n`n**Chromium Version:** $chromiumVersion`n**Chrome++ Version:** $chromePlusVersion`n`n## What's Included`n- Chromium Browser Portable (Hibbiki build)`n- Chrome++ enhancements`n- WidevineCdm support`n- Pre-configured settings`n`n## Installation`n1. Download the ZIP file`n2. Extract to your desired location`n3. Run Chromium_Portable\Chrome\chrome.exe`n`n## Features`n- Fully portable - no installation required`n- Enhanced with Chrome++ features`n- Widevine DRM support for streaming`n- Optimized Chromium build`n`n---`n*This release was automatically generated by GitHub Actions*"
+        
+        Write-Host "Creating release: $releaseTag" -ForegroundColor Yellow
+        
+        gh release create $releaseTag --title $releaseTag --notes $releaseBody --repo ${{ github.repository }} $archivePath
+          
+        Write-Host "Release created successfully!" -ForegroundColor Green
+        
+    - name: Summary
+      shell: powershell
+      run: |
+        if ("${{ steps.check-release.outputs.RELEASE_EXISTS }}" -eq "true") {
+          Write-Host "Release ${{ steps.check-release.outputs.RELEASE_TAG }} already exists - skipped" -ForegroundColor Yellow
+        } else {
+          Write-Host "Successfully created release ${{ steps.check-release.outputs.RELEASE_TAG }}" -ForegroundColor Green
+        }
