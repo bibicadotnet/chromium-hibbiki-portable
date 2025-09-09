@@ -2,65 +2,53 @@ name: Update WidevineCdm
 
 on:
   schedule:
-    - cron: "0 * * * *"   # chạy mỗi tiếng
-  workflow_dispatch:
+    - cron: '0 * * * *'  # Chạy mỗi giờ
+  workflow_dispatch:  # Cho phép chạy thủ công
 
 jobs:
-  update:
+  update-widevine:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Download Edge Canary Portable mới nhất
-        run: |
-          url=$(curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases/latest \
-            | grep browser_download_url \
-            | grep canary-portable-x64 \
-            | cut -d '"' -f 4)
-          echo "Download URL: $url"
-          curl -L "$url" -o edge-canary.zip
-          7z x -y edge-canary.zip -oedge-canary > /dev/null
-
-      - name: So sánh version Widevine
-        id: compare
-        run: |
-          NEW_MANIFEST=$(find edge-canary -iname manifest.json | grep WidevineCdm | head -n1)
-          OLD_MANIFEST="WidevineCdm/manifest.json"
-
-          if [ ! -f "$NEW_MANIFEST" ]; then
-            echo "Không tìm thấy WidevineCdm trong bản tải về"
-            echo "update_needed=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          new_version=$(jq -r '.version' "$NEW_MANIFEST")
-          old_version=$(jq -r '.version' "$OLD_MANIFEST" 2>/dev/null || echo "0")
-
-          echo "new_version=$new_version"
-          echo "old_version=$old_version"
-
-          if [ "$new_version" != "$old_version" ]; then
-            echo "update_needed=true" >> $GITHUB_OUTPUT
-            echo "new_version=$new_version" >> $GITHUB_OUTPUT
-          else
-            echo "update_needed=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Cập nhật WidevineCdm
-        if: steps.compare.outputs.update_needed == 'true'
-        run: |
-          NEW_WIDEVINE=$(dirname $(find edge-canary -iname manifest.json | grep WidevineCdm | head -n1))
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Download and extract
+      run: |
+        # Lấy URL download
+        DOWNLOAD_URL=$(curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases \
+          | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url')
+        
+        # Download và giải nén vào thư mục temp
+        curl -L "$DOWNLOAD_URL" -o release.zip
+        mkdir -p temp
+        7z x release.zip -otemp
+        
+    - name: Check versions and update
+      run: |
+        # Đọc version mới
+        NEW_VERSION=$(jq -r '.version' temp/*/WidevineCdm/manifest.json)
+        
+        # Đọc version hiện tại
+        if [ -f "WidevineCdm/manifest.json" ]; then
+          CURRENT_VERSION=$(jq -r '.version' WidevineCdm/manifest.json)
+        else
+          CURRENT_VERSION="không có"
+        fi
+        
+        echo "Version hiện tại: $CURRENT_VERSION"
+        echo "Version mới: $NEW_VERSION"
+        
+        if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
+          echo "Cập nhật WidevineCdm..."
           rm -rf WidevineCdm
-          cp -r "$NEW_WIDEVINE" ./WidevineCdm
-
-      - name: Commit & Push
-        if: steps.compare.outputs.update_needed == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add WidevineCdm
-          git commit -m "Update WidevineCdm to version ${{
-            steps.compare.outputs.new_version }}"
+          cp -r temp/*/WidevineCdm .
+          
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add WidevineCdm/
+          git commit -m "Update WidevineCdm to $NEW_VERSION"
           git push
+        else
+          echo "Đã là version mới nhất rồi"
+        fi
