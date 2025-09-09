@@ -6,50 +6,34 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-widevine:
+  update:
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v4
-      
-    - name: Download and update
-      run: |
-        # Download release mới nhất
-        curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases \
-        | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url' \
-        | xargs curl -L -o release.zip
+    
+    - run: |
+        # Download
+        curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url' | xargs curl -L -o edge.zip
         
-        # Giải nén
-        7z x release.zip
+        # Extract  
+        7z x edge.zip
         
-        # Tìm thư mục WidevineCdm trong Edge_Portable
-        WIDEVINE_PATH=$(find . -path "*/Edge_Portable/Edge/*/WidevineCdm" -type d)
+        # Get new version
+        NEW=$(jq -r '.version' Edge_Portable/Edge/*/WidevineCdm/manifest.json)
         
-        # Đọc version mới
-        NEW_VERSION=$(jq -r '.version' "$WIDEVINE_PATH/manifest.json")
+        # Get old version
+        OLD=""
+        [ -f WidevineCdm/manifest.json ] && OLD=$(jq -r '.version' WidevineCdm/manifest.json)
         
-        # Đọc version cũ
-        if [ -f "WidevineCdm/manifest.json" ]; then
-          OLD_VERSION=$(jq -r '.version' "WidevineCdm/manifest.json")
-        else
-          OLD_VERSION=""
-        fi
+        echo "Old: $OLD, New: $NEW"
         
-        echo "Version cũ: $OLD_VERSION"
-        echo "Version mới: $NEW_VERSION"
-        
-        # So sánh và update
-        if [ "$NEW_VERSION" != "$OLD_VERSION" ]; then
+        # Update if different
+        if [ "$NEW" != "$OLD" ]; then
           rm -rf WidevineCdm
-          cp -r "$WIDEVINE_PATH" WidevineCdm
-          
-          git config user.name "GitHub Action"
-          git config user.email "action@github.com"
-          git add WidevineCdm/
-          git commit -m "Update WidevineCdm to $NEW_VERSION"
+          cp -r Edge_Portable/Edge/*/WidevineCdm .
+          git config user.name "bot"
+          git config user.email "bot@github.com" 
+          git add WidevineCdm
+          git commit -m "Update WidevineCdm to $NEW"
           git push
-          
-          echo "Đã cập nhật lên $NEW_VERSION"
-        else
-          echo "Đã là version mới nhất"
         fi
