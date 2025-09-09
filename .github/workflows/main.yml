@@ -96,6 +96,6 @@ jobs:
       with:
         files: ${{ env.ZIP_NAME }}
         tag_name: chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
-        name: chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
+        name: ${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
