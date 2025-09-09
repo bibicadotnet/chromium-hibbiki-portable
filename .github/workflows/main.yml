@@ -43,7 +43,8 @@ jobs:
           $chromeBin = Get-ChildItem -Path $extractPath -Recurse -Directory -Name "Chrome-bin" | Select-Object -First 1
           $targetPath = "C:\Program Files\Chromium\Application"
           New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
-          Copy-Item (Join-Path $extractPath $chromeBin "\*") $targetPath -Recurse -Force
+          $sourcePath = Join-Path $extractPath $chromeBin
+          Copy-Item "$sourcePath\*" $targetPath -Recurse -Force
           
           echo "CHROMIUM_VERSION=$($release.tag_name)" >> $env:GITHUB_OUTPUT
           
