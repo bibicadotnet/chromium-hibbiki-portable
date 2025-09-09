@@ -32,14 +32,16 @@ jobs:
         echo "PLUS_URL=$plus_url" >> $env:GITHUB_ENV
 
     - name: Check if release exists
+      id: check
       run: |
         $tag_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}"
-        $release = gh release view $tag_name 2>&1
-        if ($LASTEXITCODE -eq 0) {
+        echo "REL=$tag_name" >> $env:GITHUB_ENV
+        $r = gh api -X GET repos/${{ github.repository }}/releases/tags/$tag_name --jq ".message" 2>$null
+        if ($r -eq "Not Found") {
+          echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
+        } else {
           echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
           echo "Release $tag_name already exists, skipping build"
-        } else {
-          echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
         }
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
