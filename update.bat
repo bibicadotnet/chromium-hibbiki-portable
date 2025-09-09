@@ -46,6 +46,7 @@ echo   $currentDir = "%~dp0"
 echo.
 echo   Write-Host "Updating files..."
 echo   if ^(Test-Path "chrome.exe"^) { Remove-Item "chrome.exe" -Force }
+echo   if ^(Test-Path "chrome_proxy.exe"^) { Remove-Item "chrome_proxy.exe" -Force }
 echo   if ^(Test-Path "version.dll"^) { Remove-Item "version.dll" -Force }
 echo   if ^(Test-Path $currentVersion^) { Remove-Item $currentVersion -Recurse -Force }
 echo.
