@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromium Hibbiki Portable Debloat</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAHYgAAB2IBOHqZ2wAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAScSURBVFiF7ZZbbFRVFIa/ffY5M53p0AvtMC1oCe20pa0GKdrEEDCBpFXwgZYWKCgpISAJie9eiUSNwScUjRIxSNRUoWCMCUHkgWpb5NIS7CUFRdtpS6cXept2Opdzjg/G0jIUmDbBmPC/nGTvtf71n3/tdfaBh/g/Iy+vzJGXV+aYDYc6m+Qhq6VBmKYE0h+4gNScshe1pLnpSXnZIY/i0Lh0MDQTHmVm5cuk5rB+GLtll6I/t8W6UPV7AfHABKTkGuvVZKfD6s5CiXWQUbHJmpa2OWEmXDNqgarKVwLdXuk/uA+BSU9ji10k6j/RzrJouSJsm/dYuUtVzWrDNF2KqowLRQm6N+Ue/r2yucK9YfHha5XNOw1/2Pnx2wuUsXEDgLhYyc5XO3QlRu27UxEjbMQIIbzGSGCF948TPXcXkL3+iHOpa/NTb62UQlOQVklMkp3x/jFikuz42oY4WXyMxtPZfP7NAAiT7RuSePzZqxRVlSDUyK6aIYOLe6r1ngbv1z2tVVsn70W0wES0OQvmyzmL4qes25x2AGSsht2hokqBM0kiACnBEaeiOSzEJNvuZALJBfOlt6Gn7fb1CAFCoAs5/YE2gmF03QSguOiWyHDQwAjp0+YJKRCCiICopsA04PLecwTGdPRJVIYB/jGd+r11YJrRUEYnoOtsG8N9AnvCHNo6ghPrHTdC2BLmMNwNXdWeqARENYZ9NV3IgtXI1st8VnmdVJdGWDfpu6ljWZSBmbmE3pqLzH8m7b45o3JADxuEGi/ha27iTN0owaCBoZucqR1lpKmJ4JUL6IHpz8GsBWguG6LvOmt/KMXQJGtXxbFmVTy6qrDm+xKUgXasqXeegulwXy3orffSW9+NI8VB4bESNIdG5o58Xt//G4oUZO3Mx+aKpeh4Me2n/qTl0BWSl7pw5rvuyX1PBxre/5ULe6rRx0J0n+viZHEVPs8IGRty6RxR8AxAemkOvo4RTq47jreuk/BokAt7qmnYd252DvRc6qb7lw4Kvy1Gtf0Teq2ymfr3aln5URHLD64BBEIK6t+tJWf7EtwbFwOQs+MJTm/8jp7V3cxbljIzBwZbb+Iuz5koDpBRnI2iSgZa+mg8cInGAxcZaOlDqArp6zJvvZlNxV2ey2DrzZk7kLU5N1KxVfLkm8s5VXqCvF35AFTv/pFnjxajWOWU2MzyyPyoBEwHn2eYhc+7J+we7RzG1zGCNSm6CYDbbkNnVukHilXdpdo0TXVYI4LDvnGefmcFqdN8aG6cbafutZ9RHTG4X1qFp+o8j64vwFN1Ht9f/YT94ZAZCH3Se/XYy//mTHFAClIs2Xla4satoEaaE+r0UPvGpyiiBmmzTNnT/UEMUxK/dTeWBWkMJs7FXlHIoD0We0UhtrExBioPa4GmK1Nmc0oVU/IVw/0lSmKiVGIi7VSd87At3k9oaBChTO23aeho8QkwKU/GxU88DYsFc6hfxzS/nJwXce8uWL7ti/Cw/wXFZjMVqyW6q20aGIGAMPzjQo2LPdJZc2jbXQUAPJJXNtcI49RNY0a/2rdDCkVTVHo7mo7efSYf4r/A32tCoGu61j1CAAAAAElFTkSuQmCC">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #663399 0%, #4a1a7a 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .section h2.versions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .section h2.versions::before {
+            content: "📦";
+            font-size: 1.1rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .chromium-info {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: normal;
+            border: none;
+            padding: 0;
+        }
+
+        .chromium-info a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .chromium-info a:hover {
+            text-decoration: underline;
+        }
+
+        .version-list {
+            list-style: none;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .version-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .version-item:last-child {
+            border-bottom: none;
+        }
+
+        .version-info h3 {
+            font-size: 1rem;
+            margin-bottom: 3px;
+            color: #333;
+        }
+
+        .version-status {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .version-number {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #663399;
+            color: white;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .version-number:hover {
+            background: #4a1a7a;
+        }
+
+        .version-number.unavailable {
+            background: transparent;
+            color: #999;
+            cursor: default;
+        }
+
+        .version-number.unavailable:hover {
+            background: transparent;
+            color: #999;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-current { background: #28a745; }
+        .status-outdated { background: #ffc107; }
+        .status-unavailable { background: #dc3545; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        a[href*="github.com"]:not(.version-number):hover {
+            color: #4a1a7a !important;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
+
+        .features {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+        }
+
+        .features ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .features li {
+            padding: 3px 0;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .features li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #663399;
+            font-weight: bold;
+        }
+
+        .features p {
+            margin-bottom: 10px;
+        }
+
+        .features a {
+            color: #663399;
+            text-decoration: none;
+        }
+
+        .features a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+
+            .version-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Chromium Hibbiki Portable Debloat</h1>
+            <p>Tải về, giải nén và sử dụng ngay - không cần cài đặt</p>
+        </header>
+
+        <div class="content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="versions">Các phiên bản Portable có sẵn</h2>
+                    <div class="chromium-info">
+                        <span id="uaChromiumVersion"></span>
+                    </div>
+                </div>
+                <div id="versions-content">
+                    <div class="loading">Đang tải danh sách phiên bản...</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>⭐ Tính năng</h2>
+                <div class="features">
+                    <ul>
+                        <li>Chromium Hibbiki Portable với tất cả dữ liệu được lưu trữ cục bộ, vẫn duy trì hỗ trợ Manifest V2</li>
+                        <li>Phiên bản Chromium Hibbiki độ ổn định cao, sử dụng ít tài nguyên CPU và RAM</li>
+                        <li>Hỗ trợ đăng nhập bằng tài khoản Google và đồng bộ hóa dữ liệu</li>
+                        <li>Hỗ trợ Widevine, H.264, HEVC và các codec độc quyền khác (không bị lỗi liên quan tới DRM)</li>
+                        <li>Tối ưu hiệu năng, tăng thêm một chút quyền riêng tư, dễ dàng tùy chỉnh theo nhu cầu cá nhân</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📁 Các file và công dụng</h2>
+                <div class="features">
+                    <ul>
+                        <li><strong>chrome++.ini</strong>: File cấu hình cho <a href="https://github.com/Bush2021/chrome_plus" target="_blank">Chrome++</a></li>
+                        <li><strong>debloater.reg</strong>: Loại bỏ các tính năng không cần thiết của Chromium</li>
+                        <li><strong>default-apps-multi-profile.bat</strong>: Đặt Chromium làm trình duyệt mặc định</li>
+                        <li><strong>update.bat</strong>: Cập nhật lên phiên bản mới nhất</li>
+                    </ul>
+                </div>
+            </div>
+
+            <p style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+                <a href="https://github.com/bibicadotnet/chromium-hibbiki-portable" target="_blank" style="color: #663399; text-decoration: none; font-size: 1.1em; display: inline-flex; align-items: center; gap: 8px; transition: color 0.2s ease;">
+                    <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 
+                                 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 
+                                 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+                                 -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 
+                                 1.87.87 2.33.66.07-.52.28-.87.51-1.07
+                                 -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59
+                                 .82-2.15-.08-.2-.36-1.02.08-2.12 0 0 
+                                 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 
+                                 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82 
+                                 .44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 
+                                 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 
+                                 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 
+                                 8.013 0 0016 8c0-4.42-3.58-8-8-8z">
+                        </path>
+                    </svg>
+                    Xem trên GitHub
+                </a>
+            </p>
+        </div>
+    </div>
+
+<script>
+    // Hiển thị thông tin Chromium version
+    navigator.userAgentData.getHighEntropyValues(["fullVersionList"]).then(function(data) {
+        if (data.fullVersionList.length !== 0) {
+            var brandsList = data.fullVersionList;
+            var chromiumVersion = null;
+            var browserName = null;
+            var browserVersion = null;
+
+            // Lấy Chromium version
+            for (var i = 0; i < brandsList.length; i++) {
+                if (brandsList[i].brand === "Chromium") {
+                    chromiumVersion = brandsList[i].version;
+                    break;
+                }
+            }
+
+            for (var i = 0; i < brandsList.length; i++) {
+                if (brandsList[i].brand === "Microsoft Edge") {
+                    browserName = "Microsoft Edge";
+                    browserVersion = brandsList[i].version;
+                    break;
+                }
+            }
+
+            var displayText = "";
+            if (browserName === "Microsoft Edge") {
+                displayText = browserName + "\t" + browserVersion + "<br>" +
+                              "Chromium version\t" + chromiumVersion;
+            } else {
+                displayText = "Chromium version\t" + chromiumVersion;
+            }
+
+            document.getElementById("uaChromiumVersion").innerHTML = displayText;
+        }
+    });
+
+    // Lấy thông tin releases từ GitHub API
+    async function fetchReleases() {
+        try {
+            let allReleases = [];
+            let page = 1;
+            const perPage = 100; // GitHub API cho phép tối đa 100 items per page
+            
+            // Lấy tất cả releases thay vì chỉ 30 releases đầu
+            while (true) {
+                const response = await fetch(`https://api.github.com/repos/bibicadotnet/chromium-hibbiki-portable/releases?page=${page}&per_page=${perPage}`);
+                const releases = await response.json();
+                
+                if (!Array.isArray(releases) || releases.length === 0) {
+                    break;
+                }
+                
+                allReleases = allReleases.concat(releases);
+                
+                // Nếu số lượng releases trong page này ít hơn perPage, 
+                // có nghĩa là đã lấy hết
+                if (releases.length < perPage) {
+                    break;
+                }
+                
+                page++;
+            }
+
+            // Lọc và sắp xếp releases
+            const processedReleases = processReleases(allReleases);
+            displayReleases(processedReleases);
+            
+        } catch (error) {
+            console.error('Error fetching releases:', error);
+            document.getElementById('versions-content').innerHTML = 
+                '<div class="error">Không thể tải danh sách phiên bản. Vui lòng thử lại sau.</div>';
+        }
+    }
+
+    function processReleases(releases) {
+        // Lọc các releases có tag_name phù hợp với pattern
+        const validReleases = releases.filter(release => {
+            return release.tag_name && release.tag_name.match(/^chromium-portable-x64_(\d+\.\d+\.\d+\.\d+)_/);
+        });
+
+        // Tạo map để nhóm theo major version
+        const versionMap = new Map();
+        
+        validReleases.forEach(release => {
+            const match = release.tag_name.match(/^chromium-portable-x64_(\d+)\.(\d+)\.(\d+)\.(\d+)_/);
+            if (match) {
+                const majorVersion = parseInt(match[1]);
+                const fullVersion = `${match[1]}.${match[2]}.${match[3]}.${match[4]}`;
+                
+                if (!versionMap.has(majorVersion) || 
+                    new Date(release.published_at) > new Date(versionMap.get(majorVersion).published_at)) {
+                    versionMap.set(majorVersion, {
+                        ...release,
+                        majorVersion: majorVersion,
+                        fullVersion: fullVersion
+                    });
+                }
+            }
+        });
+
+        // Sắp xếp theo major version giảm dần và lấy tối đa 5 phiên bản
+        return Array.from(versionMap.values())
+            .sort((a, b) => b.majorVersion - a.majorVersion)
+            .slice(0, 5);
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    function displayReleases(releases) {
+        if (releases.length === 0) {
+            document.getElementById('versions-content').innerHTML = 
+                '<div class="error">Không tìm thấy phiên bản nào.</div>';
+            return;
+        }
+
+        let html = '<ul class="version-list">';
+        
+        releases.forEach((release, index) => {
+            const downloadUrl = `https://github.com/bibicadotnet/chromium-hibbiki-portable/releases/download/${release.tag_name}/${release.tag_name}.zip`;
+            const isLatest = index === 0;
+            const statusClass = isLatest ? 'status-current' : 'status-outdated';
+            const releaseDate = formatDate(release.published_at);
+            
+            html += `
+                <li class="version-item">
+                    <div class="version-info">
+                        <h3>Chromium Portable ${release.majorVersion}.x</h3>
+                        <div class="version-status">
+                            <span class="status-dot ${statusClass}"></span>
+                            Ngày phát hành: ${releaseDate}
+                        </div>
+                    </div>
+                    <a href="${downloadUrl}" class="version-number" target="_blank">${release.fullVersion}</a>
+                </li>
+            `;
+        });
+        
+        html += '</ul>';
+        document.getElementById('versions-content').innerHTML = html;
+    }
+
+    // Tải dữ liệu khi trang được load
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchReleases();
+    });
+</script>
+
+</body>
+</html>
