@@ -31,35 +31,27 @@ jobs:
         echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
         echo "PLUS_URL=$plus_url" >> $env:GITHUB_ENV
 
-        - name: Check if release exists
-          id: check
-          run: |
-            $tag_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}"
-            echo "REL=$tag_name" >> $env:GITHUB_ENV
-            
-            # Kiểm tra xem release đã tồn tại chưa
-            $headers = @{
-              "Authorization" = "Bearer ${{ secrets.GITHUB_TOKEN }}"
-              "Accept" = "application/vnd.github.v3+json"
-            }
-            
-            try {
-              $response = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag_name" -Headers $headers -Method Get
-              echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
-              Write-Output "Release $tag_name already exists, skipping build"
-            }
-            catch {
-              if ($_.Exception.Response.StatusCode -eq 404) {
-                echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
-                Write-Output "Release $tag_name does not exist, proceeding with build"
-              } else {
-                # Nếu có lỗi khác, ghi log và coi như release không tồn tại để tiếp tục build
-                Write-Output "Error checking release: $($_.Exception.Message)"
-                echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
-              }
-            }
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Check if release exists
+      id: check
+      run: |
+        $tag_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}"
+        echo "REL=$tag_name" >> $env:GITHUB_ENV
+        $url = "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag_name"
+
+        try {
+          $r = Invoke-RestMethod -Uri $url -Headers @{Authorization="Bearer $env:GITHUB_TOKEN"}
+          echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
+          Write-Output "Release $tag_name already exists, skipping build"
+        } catch {
+          if ($_.Exception.Response.StatusCode.Value__ -eq 404) {
+            echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
+            Write-Output "ℹRelease $tag_name does not exist yet"
+          } else {
+            throw $_
+          }
+        }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Chromium Portable
       if: env.RELEASE_EXISTS == 'false'
