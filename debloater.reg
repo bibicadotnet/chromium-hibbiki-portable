@@ -1,6 +1,9 @@
 Windows Registry Editor Version 5.00
 
+; Phục hồi về mặc định
 [-HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Chromium]
+
+; Cấu hình cài đặt
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Chromium]
 
 ; Không dùng AI
@@ -25,7 +28,7 @@ Windows Registry Editor Version 5.00
 ; Tắt Kích hoạt cảnh báo bảo vệ mật khẩu
 "PasswordProtectionWarningTrigger"=dword:00000000
 
-; Tắt Máy tạo mã QR
+; Tắt tạo mã QR
 "QRCodeGeneratorEnabled"=dword:00000000
 
 ; Tắt Hỗ trợ tập hợp các trang web liên quan
@@ -85,9 +88,6 @@ Windows Registry Editor Version 5.00
 ; Tắt Spell check / Kiểm tra chính tả
 "SpellcheckEnabled"=dword:00000000
 
-; Cho phép tiếp tục hỗ trợ các tiện ích Manifest V2 (không còn hỗ trợ từ 139)
-; "ExtensionManifestV2Availability"=dword:00000002
-
 ; Tắt Help improve security on the web for everyone
 "SafeBrowsingExtendedReportingEnabled"=dword:00000000
 
@@ -99,19 +99,19 @@ Windows Registry Editor Version 5.00
 "ShowFullUrlsInAddressBar"=dword:00000001
 
 ; Chặn định vị ở mọi trang (hiển thị khi truy cập trang)
-"DefaultGeolocationSetting"=dword:00000002
+;"DefaultGeolocationSetting"=dword:00000002
 
 ; Chặn thông báo ở mọi trang (hiển thị khi truy cập trang)
-"DefaultNotificationsSetting"=dword:00000002
+;"DefaultNotificationsSetting"=dword:00000002
 
 ; Chặn các trang truy cập cảm biến chuyển động (motion sensors)
-"DefaultSensorsSetting"=dword:00000002  
+;"DefaultSensorsSetting"=dword:00000002  
 
 ; Bật Block third-party cookies
-"BlockThirdPartyCookies"=dword:00000001
+;"BlockThirdPartyCookies"=dword:00000001
 
-; Bật Safe Browsing Standard protection
-"SafeBrowsingProtectionLevel"=dword:00000001
+; Tắt Safe Browsing protection
+"SafeBrowsingProtectionLevel"=dword:00000000
 
 ; Tắt Warn you if a password was compromised in a data breach
 "PasswordLeakDetectionEnabled"=dword:00000000
@@ -122,8 +122,8 @@ Windows Registry Editor Version 5.00
 ; Bật Memory Saver -> Balanced memory savings
 "MemorySaverModeSavings"=dword:00000001
 
-; Bật Preload pages
-"NetworkPredictionOptions"=dword:00000000
+; Bật Extended preloading
+"NetworkPredictionOptions"=dword:00000003
 
 ; Bật Use graphics acceleration when available
 "HardwareAccelerationModeEnabled"=dword:00000001
