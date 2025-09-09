@@ -21,7 +21,9 @@ jobs:
 
     - name: Check if release exists
       run: |
-        $tag_name = "portable-${{ env.PLUS_VER }}"
+        $ver = (Get-Item "chrome.exe").VersionInfo.ProductVersion 2>$null
+        if (-not $ver) { $ver = "999.0.9999.0" } # Fallback version
+        $tag_name = "chromium-portable-x64_${ver}_${{ env.PLUS_VER }}"
         $release_exists = gh release view $tag_name 2>&1
         if ($LASTEXITCODE -eq 0) {
           echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
