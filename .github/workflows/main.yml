@@ -10,93 +10,67 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Get latest versions
-      run: |
-        # Lấy thông tin Chromium
-        $chromium_release = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/chromium-hibbiki/releases/latest"
-        $chromium_url = $chromium_release.assets[0].browser_download_url
-        echo "CHROMIUM_URL=$chromium_url" >> $env:GITHUB_ENV
-
-        # Tách version từ tag_name (ví dụ: v140.0.7339.81-r1496484 -> 140.0.7339.81)
-        $chromium_tag = $chromium_release.tag_name
-        $chromium_ver = $chromium_tag -replace '^v','' -replace '-r\d+$',''
-        echo "CHROMIUM_VER=$chromium_ver" >> $env:GITHUB_ENV
-
-        # Lấy version chrome_plus (bỏ prefix v nếu có)
-        $plus_release = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/Chromium_SetDLL/releases/latest"
-        $plus_ver = $plus_release.tag_name -replace '^v',''
-        $plus_url = $plus_release.assets[0].browser_download_url
-        echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
-        echo "PLUS_URL=$plus_url" >> $env:GITHUB_ENV
-
-    - name: Check if release exists
+    - name: Check versions and release
       id: check
       run: |
-        $tag_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}"
-        echo "REL=$tag_name" >> $env:GITHUB_ENV
-        $url = "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag_name"
-
+        $chromium = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/chromium-hibbiki/releases/latest"
+        $chromium_ver = $chromium.tag_name -replace '^v','' -replace '-r\d+$',''
+        
+        $plus = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/Chromium_SetDLL/releases/latest"
+        $plus_ver = $plus.tag_name -replace '^v',''
+        $plus_url = ($plus.assets | Where-Object { $_.name -like "Chrome*.7z" }).browser_download_url
+        
+        $tag = "chromium-portable-x64_${chromium_ver}_${plus_ver}"
+        
+        echo "CHROMIUM_VER=$chromium_ver" >> $env:GITHUB_ENV
+        echo "CHROMIUM_URL=$($chromium.assets[0].browser_download_url)" >> $env:GITHUB_ENV
+        echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
+        echo "PLUS_URL=$plus_url" >> $env:GITHUB_ENV
+        echo "TAG=$tag" >> $env:GITHUB_ENV
+        
         try {
-          $r = Invoke-RestMethod -Uri $url -Headers @{Authorization="Bearer $env:GITHUB_TOKEN"}
-          echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
-          Write-Output "Release $tag_name already exists, skipping build"
+          Invoke-RestMethod "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag" -Headers @{Authorization="Bearer $env:GITHUB_TOKEN"}
+          echo "EXISTS=true" >> $env:GITHUB_ENV
         } catch {
-          if ($_.Exception.Response.StatusCode.Value__ -eq 404) {
-            echo "RELEASE_EXISTS=false" >> $env:GITHUB_ENV
-            Write-Output "ℹRelease $tag_name does not exist yet"
-          } else {
-            throw $_
-          }
+          echo "EXISTS=false" >> $env:GITHUB_ENV
         }
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build Chromium Portable
-      if: env.RELEASE_EXISTS == 'false'
+    - uses: actions/checkout@v4
+      if: env.EXISTS == 'false'
+
+    - name: Build
+      if: env.EXISTS == 'false'
       run: |
-        # Tạo thư mục gốc
-        New-Item -ItemType Directory -Force -Path Chromium_Portable | Out-Null
-
-        # Tải Chromium và 7zr
         curl -sSL "${{ env.CHROMIUM_URL }}" -o chrome.7z
-        curl -sSL https://www.7-zip.org/a/7zr.exe -o 7zr.exe
-
-        # Giải nén Chromium
-        ./7zr.exe x chrome.7z
-        Rename-Item -Force Chrome-bin Chromium
-        Move-Item -Force Chromium Chromium_Portable/
-
-        # Tải và giải nén chrome_plus
         curl -sSL "${{ env.PLUS_URL }}" -o chrome_plus.7z
+        curl -sSL https://www.7-zip.org/a/7zr.exe -o 7zr.exe
+        
+        ./7zr.exe x chrome.7z
         ./7zr.exe x chrome_plus.7z
+        
+        New-Item -Force -Type Directory Chromium_Portable | Out-Null
+        Rename-Item Chrome-bin Chromium
+        Move-Item Chromium Chromium_Portable/
+        
+        $dll = Get-ChildItem -Recurse version.dll | Where-Object { $_.FullName -match '\\x64\\App\\' }
+        Copy-Item $dll[0].FullName Chromium_Portable/Chromium/ -Force
+        
+        Copy-Item chrome++.ini,debloater.reg,default-apps-multi-profile.bat,update.bat Chromium_Portable/Chromium/ -Force
+        
+        New-Item -Force -Type Directory "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}" | Out-Null
+        Copy-Item WidevineCdm "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}/" -Recurse -Force
+        
+        Compress-Archive Chromium_Portable "${{ env.TAG }}.zip" -Force
+        echo "ZIP=${{ env.TAG }}.zip" >> $env:GITHUB_ENV
 
-        # Copy version.dll
-        $dll = Get-ChildItem -Recurse -Filter "version.dll" | Where-Object { $_.FullName -match '\\x64\\App\\' } | Select-Object -First 1
-        if ($dll) { Copy-Item -Force $dll.FullName Chromium_Portable/Chromium/ }
-
-        # Copy config files
-        Copy-Item -Force chrome++.ini Chromium_Portable/Chromium/
-        Copy-Item -Force debloater.reg Chromium_Portable/Chromium/
-        Copy-Item -Force default-apps-multi-profile.bat Chromium_Portable/Chromium/
-        Copy-Item -Force update.bat Chromium_Portable/Chromium/
-
-        # Copy WidevineCdm vào thư mục theo version
-        New-Item -ItemType Directory -Force -Path "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}" | Out-Null
-        Copy-Item -Recurse -Force WidevineCdm "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}/"
-
-        # Nén thành zip
-        $zip_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}.zip"
-        Compress-Archive -Path Chromium_Portable -DestinationPath $zip_name
-        echo "ZIP_NAME=$zip_name" >> $env:GITHUB_ENV
-
-    - name: Create Release
-      if: env.RELEASE_EXISTS == 'false'
+    - name: Release
+      if: env.EXISTS == 'false'
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ env.ZIP_NAME }}
-        tag_name: chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
+        files: ${{ env.ZIP }}
+        tag_name: ${{ env.TAG }}
         name: ${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
