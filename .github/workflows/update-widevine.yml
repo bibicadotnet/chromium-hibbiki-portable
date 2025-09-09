@@ -2,34 +2,50 @@ name: Update WidevineCdm
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Chạy mỗi giờ
-  workflow_dispatch:  # Cho phép chạy thủ công
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   update-widevine:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       
-    - name: Download and extract
+    - name: Download latest release
       run: |
-        # Lấy URL download
-        DOWNLOAD_URL=$(curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases \
-          | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url')
+        curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases \
+        | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url' \
+        | xargs curl -L -o edge.zip
         
-        # Download và giải nén vào thư mục temp
-        curl -L "$DOWNLOAD_URL" -o release.zip
-        mkdir -p temp
-        7z x release.zip -otemp
-        
-    - name: Check versions and update
+    - name: Extract and check version
       run: |
-        # Debug: Xem cấu trúc thư mục
-        echo "=== Cấu trúc thư mục temp ==="
-        find temp -type f -name "*.json" | head -10
-        echo "=== Tất cả thư mục ==="
-        find temp -type d | head -20
-        echo "=== Tìm WidevineCdm ==="
-        find temp -name "*Widevine*" -o -name "*widevine*"
+        unzip -q edge.zip -d downloaded/
+        
+        NEW_MANIFEST=$(find downloaded -name manifest.json -path "*/WidevineCdm/*")
+        NEW_VERSION=$(jq -r '.version' "$NEW_MANIFEST")
+        
+        if [ -f "WidevineCdm/manifest.json" ]; then
+          OLD_VERSION=$(jq -r '.version' "WidevineCdm/manifest.json")
+        else
+          OLD_VERSION="none"
+        fi
+        
+        echo "Old: $OLD_VERSION"
+        echo "New: $NEW_VERSION"
+        
+        if [ "$NEW_VERSION" != "$OLD_VERSION" ]; then
+          NEW_DIR=$(dirname "$NEW_MANIFEST")
+          rm -rf WidevineCdm
+          cp -r "$NEW_DIR" WidevineCdm
+          
+          git config user.name "Bot"
+          git config user.email "bot@github.com"
+          git add WidevineCdm/
+          git commit -m "Update WidevineCdm to $NEW_VERSION"
+          git push
+          
+          echo "Updated to $NEW_VERSION"
+        else
+          echo "Already latest version"
+        fi
