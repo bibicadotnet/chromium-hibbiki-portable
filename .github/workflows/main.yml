@@ -80,6 +80,7 @@ jobs:
         Copy-Item -Force chrome++.ini Chromium_Portable/Chromium/
         Copy-Item -Force debloater.reg Chromium_Portable/Chromium/
         Copy-Item -Force default-apps-multi-profile.bat Chromium_Portable/Chromium/
+        Copy-Item -Force update.bat Chromium_Portable/Chromium/
 
         # Copy WidevineCdm vào thư mục theo version
         New-Item -ItemType Directory -Force -Path "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}" | Out-Null
