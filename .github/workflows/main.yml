@@ -73,7 +73,7 @@ jobs:
         ./7zr.exe x chrome_plus.7z
 
         # Copy version.dll
-        $dll = Get-ChildItem -Recurse -Filter "version.dll" | Select-Object -First 1
+        $dll = Get-ChildItem -Recurse -Filter "version.dll" | Where-Object { $_.FullName -match '\\x64\\App\\' } | Select-Object -First 1
         if ($dll) { Copy-Item -Force $dll.FullName Chromium_Portable/Chromium/ }
 
         # Copy config files
