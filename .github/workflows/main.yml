@@ -15,7 +15,7 @@ jobs:
     - name: Get latest versions
       run: |
         # Lấy thông tin Chromium
-        $chromium_release = Invoke-RestMethod "https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest"
+        $chromium_release = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/chromium-hibbiki/releases/latest"
         $chromium_url = $chromium_release.assets[0].browser_download_url
         echo "CHROMIUM_URL=$chromium_url" >> $env:GITHUB_ENV
 
@@ -25,7 +25,7 @@ jobs:
         echo "CHROMIUM_VER=$chromium_ver" >> $env:GITHUB_ENV
 
         # Lấy version chrome_plus (bỏ prefix v nếu có)
-        $plus_release = Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest"
+        $plus_release = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/Chromium_SetDLL/releases/latest"
         $plus_ver = $plus_release.tag_name -replace '^v',''
         $plus_url = $plus_release.assets[0].browser_download_url
         echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
