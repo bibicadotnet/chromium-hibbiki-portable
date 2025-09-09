@@ -7,35 +7,45 @@ on:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     
-    - run: |
+    - name: Download and update
+      shell: bash
+      run: |
+        # Get latest release URL
+        URL=$(curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url')
+        
         # Download
-        curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url' | xargs curl -L -o edge.zip
+        curl -L "$URL" -o edge.zip
         
-        # Extract  
-        7z x edge.zip
+        # Extract
+        powershell -command "Expand-Archive -Path edge.zip -DestinationPath . -Force"
         
-        # Find manifest file
-        MANIFEST_FILE=$(find . -path "*/Edge_Portable/Edge/*/WidevineCdm/manifest.json")
-        WIDEVINE_DIR=$(dirname "$MANIFEST_FILE")
+        # Get new version
+        NEW_VERSION=$(jq -r '.version' Edge_Portable/Edge/*/WidevineCdm/manifest.json)
         
-        # Get versions
-        NEW=$(jq -r '.version' "$MANIFEST_FILE")
-        OLD=""
-        [ -f WidevineCdm/manifest.json ] && OLD=$(jq -r '.version' WidevineCdm/manifest.json)
+        # Get current version
+        CURRENT_VERSION=""
+        if [ -f "WidevineCdm/manifest.json" ]; then
+          CURRENT_VERSION=$(jq -r '.version' WidevineCdm/manifest.json)
+        fi
         
-        echo "Old: $OLD, New: $NEW"
+        echo "Current: $CURRENT_VERSION"
+        echo "New: $NEW_VERSION"
         
         # Update if different
-        if [ "$NEW" != "$OLD" ]; then
+        if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
+          echo "Updating WidevineCdm..."
           rm -rf WidevineCdm
-          cp -r "$WIDEVINE_DIR" WidevineCdm
-          git config user.name "bot"
-          git config user.email "bot@github.com" 
-          git add WidevineCdm
-          git commit -m "Update WidevineCdm to $NEW"
+          cp -r Edge_Portable/Edge/*/WidevineCdm .
+          
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add WidevineCdm/
+          git commit -m "Update WidevineCdm to $NEW_VERSION"
           git push
+        else
+          echo "Already up to date"
         fi
