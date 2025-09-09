@@ -125,29 +125,19 @@ jobs:
         # Copy config files
         Copy-Item "$env:GITHUB_WORKSPACE\chrome++.ini" "$applicationPath\chrome++.ini" -Force -ErrorAction SilentlyContinue
         
-        # Install Widevine CDM from GitHub repo (Google CDN no longer works)
+        # Install Widevine
         Write-Host "Installing WidevineCdm..." -ForegroundColor Yellow
-        try {
-          # Use the existing working source
-          $widevineZip = "$env:TEMP\WidevineCdm.7z"
-          (New-Object System.Net.WebClient).DownloadFile("https://github.com/bibicadotnet/chromium-hibbiki-portable/raw/main/WidevineCdm.7z", $widevineZip)
-          
-          $widevineExtract = "$env:TEMP\widevine_extract"
-          if (Test-Path $widevineExtract) { Remove-Item $widevineExtract -Recurse -Force }
-          New-Item -ItemType Directory -Path $widevineExtract -Force | Out-Null
-          & "$env:TEMP\7zr.exe" x $widevineZip -o"$widevineExtract" -y | Out-Null
-          
-          # Install to correct location
-          $version = "${{ steps.chromium-install.outputs.CHROMIUM_VERSION }}" -replace '^v(\d+\.\d+\.\d+\.\d+).*', '$1'
-          $versionPath = Join-Path $applicationPath $version
-          if (-not (Test-Path $versionPath)) { New-Item -ItemType Directory -Path $versionPath -Force | Out-Null }
-          Copy-Item (Join-Path $widevineExtract "WidevineCdm") (Join-Path $versionPath "WidevineCdm") -Recurse -Force
-          
-          Write-Host "Widevine CDM installed successfully"
-        } catch {
-          Write-Warning "Failed to install Widevine CDM: $($_.Exception.Message)"
-          Write-Host "Continuing without Widevine support"
-        }
+        $widevineZip = "$env:TEMP\WidevineCdm.7z"
+        (New-Object System.Net.WebClient).DownloadFile("https://github.com/bibicadotnet/Chromium-Hibbiki-Woolyss-Portable/raw/main/WidevineCdm.7z", $widevineZip)
+        
+        $widevineExtract = "$env:TEMP\widevine_extract"
+        New-Item -ItemType Directory -Path $widevineExtract -Force | Out-Null
+        & "$env:TEMP\7zr.exe" x $widevineZip -o"$widevineExtract" -y | Out-Null
+        
+        $version = "${{ steps.chromium-install.outputs.CHROMIUM_VERSION }}" -replace '^v(\d+\.\d+\.\d+\.\d+).*', '$1'
+        $versionPath = Join-Path $applicationPath $version
+        New-Item -ItemType Directory -Path $versionPath -Force | Out-Null
+        Copy-Item (Join-Path $widevineExtract "WidevineCdm") (Join-Path $versionPath "WidevineCdm") -Recurse -Force
         
         # Copy to portable directory
         Write-Host "Creating portable package..." -ForegroundColor Yellow
