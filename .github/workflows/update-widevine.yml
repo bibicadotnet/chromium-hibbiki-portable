@@ -13,67 +13,51 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Get latest release
-      id: get-release
+    - name: Get latest release and download
       run: |
-        LATEST_RELEASE=$(curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases | \
-          jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0].tag_name')
+        # Lấy thông tin release mới nhất
+        curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases \
+          | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url' \
+          | xargs curl -L -o release.zip
         
-        DOWNLOAD_URL="https://github.com/bibicadotnet/microsoft-edge-multi-portable/releases/download/${LATEST_RELEASE}/${LATEST_RELEASE}.zip"
-        
-        echo "release_tag=${LATEST_RELEASE}" >> $GITHUB_OUTPUT
-        echo "download_url=${DOWNLOAD_URL}" >> $GITHUB_OUTPUT
-        echo "Latest release: ${LATEST_RELEASE}"
-        
-    - name: Download and extract
-      run: |
-        wget -O release.zip "${{ steps.get-release.outputs.download_url }}"
-        unzip -q release.zip
+        # Giải nén đơn giản
+        7z x release.zip
         
         # Tìm thư mục WidevineCdm
         WIDEVINE_PATH=$(find . -name "WidevineCdm" -type d | head -1)
-        echo "Found WidevineCdm at: ${WIDEVINE_PATH}"
         
-        # Đọc version mới
-        NEW_VERSION=$(jq -r '.version' "${WIDEVINE_PATH}/manifest.json")
-        echo "New version: ${NEW_VERSION}"
-        
-        # Đọc version hiện tại (nếu có)
-        if [ -f "WidevineCdm/manifest.json" ]; then
-          CURRENT_VERSION=$(jq -r '.version' "WidevineCdm/manifest.json")
-          echo "Current version: ${CURRENT_VERSION}"
-        else
-          CURRENT_VERSION=""
-          echo "No current version found"
+        if [ -z "$WIDEVINE_PATH" ]; then
+          echo "Không tìm thấy thư mục WidevineCdm"
+          exit 1
         fi
         
-        echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
-        echo "CURRENT_VERSION=${CURRENT_VERSION}" >> $GITHUB_ENV
-        echo "WIDEVINE_PATH=${WIDEVINE_PATH}" >> $GITHUB_ENV
+        echo "WIDEVINE_PATH=$WIDEVINE_PATH" >> $GITHUB_ENV
         
-    - name: Update WidevineCdm if newer
+    - name: Check versions and update
       run: |
+        # Đọc version mới
+        NEW_VERSION=$(cat "$WIDEVINE_PATH/manifest.json" | jq -r '.version')
+        
+        # Đọc version hiện tại
+        if [ -f "WidevineCdm/manifest.json" ]; then
+          CURRENT_VERSION=$(cat "WidevineCdm/manifest.json" | jq -r '.version')
+        else
+          CURRENT_VERSION="không có"
+        fi
+        
+        echo "Version hiện tại: $CURRENT_VERSION"
+        echo "Version mới: $NEW_VERSION"
+        
         if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
-          echo "Updating WidevineCdm from $CURRENT_VERSION to $NEW_VERSION"
-          
-          # Xóa thư mục cũ nếu có
+          echo "Cập nhật WidevineCdm..."
           rm -rf WidevineCdm
-          
-          # Copy thư mục mới
           cp -r "$WIDEVINE_PATH" WidevineCdm
           
-          echo "UPDATE_NEEDED=true" >> $GITHUB_ENV
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add WidevineCdm/
+          git commit -m "Update WidevineCdm to $NEW_VERSION"
+          git push
         else
-          echo "WidevineCdm is already up to date (version: $CURRENT_VERSION)"
-          echo "UPDATE_NEEDED=false" >> $GITHUB_ENV
+          echo "Đã là version mới nhất rồi"
         fi
-        
-    - name: Commit changes
-      if: env.UPDATE_NEEDED == 'true'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        git add WidevineCdm/
-        git commit -m "Update WidevineCdm to version $NEW_VERSION"
-        git push
