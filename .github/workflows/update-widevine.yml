@@ -26,8 +26,15 @@ jobs:
         
     - name: Check versions and update
       run: |
+        # Tìm đường dẫn chính xác đến manifest.json
+        MANIFEST_PATH=$(find temp -name "manifest.json" -path "*/WidevineCdm/*" | head -1)
+        WIDEVINE_DIR=$(find temp -name "WidevineCdm" -type d | head -1)
+        
+        echo "Found manifest at: $MANIFEST_PATH"
+        echo "Found WidevineCdm at: $WIDEVINE_DIR"
+        
         # Đọc version mới
-        NEW_VERSION=$(jq -r '.version' temp/*/WidevineCdm/manifest.json)
+        NEW_VERSION=$(jq -r '.version' "$MANIFEST_PATH")
         
         # Đọc version hiện tại
         if [ -f "WidevineCdm/manifest.json" ]; then
@@ -42,7 +49,7 @@ jobs:
         if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
           echo "Cập nhật WidevineCdm..."
           rm -rf WidevineCdm
-          cp -r temp/*/WidevineCdm .
+          cp -r "$WIDEVINE_DIR" .
           
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
