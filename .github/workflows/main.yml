@@ -14,24 +14,27 @@ jobs:
 
     - name: Get latest versions
       run: |
-        # Lấy URL download Chromium
+        # Lấy thông tin Chromium
         $chromium_release = Invoke-RestMethod "https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest"
         $chromium_url = $chromium_release.assets[0].browser_download_url
         echo "CHROMIUM_URL=$chromium_url" >> $env:GITHUB_ENV
-        
+
         # Tách version từ tag_name (ví dụ: v140.0.7339.81-r1496484 -> 140.0.7339.81)
         $chromium_tag = $chromium_release.tag_name
-        $chromium_ver = $chromium_tag -replace '^v|-r\d+$'
+        $chromium_ver = $chromium_tag -replace '^v','' -replace '-r\d+$',''
         echo "CHROMIUM_VER=$chromium_ver" >> $env:GITHUB_ENV
-        
-        # Lấy version chrome_plus
-        $plus_ver = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").tag_name
+
+        # Lấy version chrome_plus (bỏ prefix v nếu có)
+        $plus_release = Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest"
+        $plus_ver = $plus_release.tag_name -replace '^v',''
+        $plus_url = $plus_release.assets[0].browser_download_url
         echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
+        echo "PLUS_URL=$plus_url" >> $env:GITHUB_ENV
 
     - name: Check if release exists
       run: |
         $tag_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}"
-        $release_exists = gh release view $tag_name 2>&1
+        $release = gh release view $tag_name 2>&1
         if ($LASTEXITCODE -eq 0) {
           echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
           echo "Release $tag_name already exists, skipping build"
@@ -44,35 +47,34 @@ jobs:
     - name: Build Chromium Portable
       if: env.RELEASE_EXISTS == 'false'
       run: |
-        # Tạo thư mục
-        mkdir Chromium_Portable
+        # Tạo thư mục gốc
+        New-Item -ItemType Directory -Force -Path Chromium_Portable | Out-Null
 
-        # Tải và giải nén Chromium
+        # Tải Chromium và 7zr
         curl -sSL "${{ env.CHROMIUM_URL }}" -o chrome.7z
         curl -sSL https://www.7-zip.org/a/7zr.exe -o 7zr.exe
-        ./7zr.exe x chrome.7z
 
-        # Đổi tên và di chuyển
-        mv Chrome-bin Chromium
-        mv Chromium Chromium_Portable/
+        # Giải nén Chromium
+        ./7zr.exe x chrome.7z
+        Rename-Item -Force Chrome-bin Chromium
+        Move-Item -Force Chromium Chromium_Portable/
 
         # Tải và giải nén chrome_plus
-        $plus_url = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").assets[0].browser_download_url
-        curl -sSL $plus_url -o chrome_plus.7z
+        curl -sSL "${{ env.PLUS_URL }}" -o chrome_plus.7z
         ./7zr.exe x chrome_plus.7z
 
         # Copy version.dll
-        $dll = Get-ChildItem -Recurse -Filter "version.dll" | Select -First 1
-        cp $dll.FullName Chromium_Portable/Chromium/
+        $dll = Get-ChildItem -Recurse -Filter "version.dll" | Select-Object -First 1
+        if ($dll) { Copy-Item -Force $dll.FullName Chromium_Portable/Chromium/ }
 
         # Copy config files
-        cp chrome++.ini Chromium_Portable/Chromium/
-        cp debloater.reg Chromium_Portable/Chromium/
-        cp default-apps-multi-profile.bat Chromium_Portable/Chromium/
+        Copy-Item -Force chrome++.ini Chromium_Portable/Chromium/
+        Copy-Item -Force debloater.reg Chromium_Portable/Chromium/
+        Copy-Item -Force default-apps-multi-profile.bat Chromium_Portable/Chromium/
 
-        # Copy WidevineCdm
-        mkdir -p "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}"
-        cp -r WidevineCdm "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}/"
+        # Copy WidevineCdm vào thư mục theo version
+        New-Item -ItemType Directory -Force -Path "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}" | Out-Null
+        Copy-Item -Recurse -Force WidevineCdm "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}/"
 
         # Nén thành zip
         $zip_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}.zip"
@@ -85,6 +87,6 @@ jobs:
       with:
         files: ${{ env.ZIP_NAME }}
         tag_name: chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
-        name: ${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
+        name: chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
