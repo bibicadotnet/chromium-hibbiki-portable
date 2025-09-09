@@ -35,12 +35,12 @@ jobs:
         
     - name: Check versions and update
       run: |
-        # Đọc version mới
-        NEW_VERSION=$(cat "$WIDEVINE_PATH/manifest.json" | jq -r '.version')
+        # Đọc version mới từ file vừa download
+        NEW_VERSION=$(jq -r '.version' "$WIDEVINE_PATH/manifest.json")
         
-        # Đọc version hiện tại
+        # Đọc version hiện tại từ repo
         if [ -f "WidevineCdm/manifest.json" ]; then
-          CURRENT_VERSION=$(cat "WidevineCdm/manifest.json" | jq -r '.version')
+          CURRENT_VERSION=$(jq -r '.version' "WidevineCdm/manifest.json")
         else
           CURRENT_VERSION="không có"
         fi
