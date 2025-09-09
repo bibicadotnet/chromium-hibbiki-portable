@@ -2,74 +2,79 @@ name: Build Chromium Portable
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Setup
-        run: |
-          mkdir Chromium_Portable
-          cd Chromium_Portable
+      - uses: actions/checkout@v4
 
-      - name: Download 7zr
+      - name: Get Chromium release
+        run: |
+          curl -sL https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest > chromium.json
+          $url = (Get-Content chromium.json | ConvertFrom-Json).assets[0].browser_download_url
+          curl -L $url -o chrome.7z
+
+      - name: Get 7zr
         run: |
           curl -L https://www.7-zip.org/a/7zr.exe -o 7zr.exe
 
-      - name: Download Chromium
-        id: chromium
-        run: |
-          $latest = Invoke-RestMethod https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest
-          $url = $latest.assets[0].browser_download_url
-          curl -L $url -o chrome.7z
-
       - name: Extract Chromium
         run: |
-          .\7zr.exe x chrome.7z
-          Move-Item Chrome-bin Chromium
-          Move-Item Chromium ..\Chromium_Portable\
+          ./7zr.exe x chrome.7z
+          Rename-Item Chrome-bin Chromium
+          mkdir Chromium_Portable
+          Move-Item Chromium Chromium_Portable/
 
-      - name: Get Chromium Version
-        id: chrome_version
+      - name: Get chrome_plus
         run: |
-          $ver = (Get-Item "Chromium_Portable\Chromium\chrome.exe").VersionInfo.ProductVersion
-          echo "version=$ver" >> $env:GITHUB_OUTPUT
+          curl -sL https://api.github.com/repos/Bush2021/chrome_plus/releases/latest > plus.json
+          $asset = (Get-Content plus.json | ConvertFrom-Json).assets | Where-Object { $_.name -like "Chrome*x86_x64_arm64.7z" }
+          curl -L $asset.browser_download_url -o plus.7z
+          ./7zr.exe x plus.7z
+          Copy-Item */x64/App/version.dll Chromium_Portable/Chromium/
 
-      - name: Download chrome_plus
-        id: chrome_plus
+      - name: Copy configs
         run: |
-          $latest = Invoke-RestMethod https://api.github.com/repos/Bush2021/chrome_plus/releases/latest
-          $asset = $latest.assets | Where-Object { $_.name -like "Chrome*x86_x64_arm64.7z" }
-          curl -L $asset.browser_download_url -o chrome_plus.7z
-          echo "version=$($latest.tag_name)" >> $env:GITHUB_OUTPUT
+          Copy-Item chrome++.ini Chromium_Portable/Chromium/
+          Copy-Item debloater.reg Chromium_Portable/Chromium/
+          Copy-Item default-apps-multi-profile.bat Chromium_Portable/Chromium/
 
-      - name: Extract chrome_plus
+      - name: Detect Chromium version
         run: |
-          .\7zr.exe x chrome_plus.7z
-          Copy-Item -Recurse "Chrome*\x64\App\version.dll" "Chromium_Portable\Chromium\"
+          $v = (Get-Item Chromium_Portable/Chromium/chrome.exe).VersionInfo.ProductVersion
+          echo "CHROMIUM_VERSION=$v" >> $env:GITHUB_ENV
 
-      - name: Copy project files
+      - name: Copy Widevine
         run: |
-          Copy-Item chrome++.ini debloater.reg default-apps-multi-profile.bat -Destination "Chromium_Portable\Chromium\"
-          $ver = "${{ steps.chrome_version.outputs.version }}"
-          $dest = "Chromium_Portable\Chromium\Chrome\$ver\WidevineCdm"
-          New-Item -ItemType Directory -Force -Path $dest
-          Copy-Item -Recurse WidevineCdm\* -Destination $dest
+          mkdir "Chromium_Portable/Chromium/$env:CHROMIUM_VERSION"
+          Copy-Item WidevineCdm "Chromium_Portable/Chromium/$env:CHROMIUM_VERSION/" -Recurse
 
-      - name: Check if release exists
-        id: check_release
+      - name: Detect chrome_plus version
         run: |
-          $tag = "chromium-portable-x64_${{ steps.chrome_version.outputs.version }}_${{ steps.chrome_plus.outputs.version }}"
-          $exists = gh release view $tag 2>$null
-          if ($exists) { echo "exists=true" >> $env:GITHUB_OUTPUT } else { echo "exists=false" >> $env:GITHUB_OUTPUT }
+          $p = (Get-Content plus.json | ConvertFrom-Json).tag_name.TrimStart("v")
+          echo "PLUS_VERSION=$p" >> $env:GITHUB_ENV
+
+      - name: Zip package
+        run: |
+          $zip = "chromium-portable-x64_${{ env.CHROMIUM_VERSION }}_${{ env.PLUS_VERSION }}.zip"
+          Compress-Archive -Path Chromium_Portable -DestinationPath $zip
+          echo "ZIP_NAME=$zip" >> $env:GITHUB_ENV
+
+      - name: Check release exists
+        id: check
+        run: |
+          $rel = "chromium-portable-x64_${{ env.CHROMIUM_VERSION }}_${{ env.PLUS_VERSION }}"
+          echo "REL=$rel" >> $env:GITHUB_ENV
+          $r = (curl -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/$rel)
+          if ($r -notmatch 'Not Found') { echo "skip=true" >> $env:GITHUB_OUTPUT }
 
       - name: Create release
-        if: steps.check_release.outputs.exists == 'false'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Compress-Archive -Path "Chromium_Portable" -DestinationPath "chromium-portable.zip"
-          $tag = "chromium-portable-x64_${{ steps.chrome_version.outputs.version }}_${{ steps.chrome_plus.outputs.version }}"
-          gh release create $tag "chromium-portable.zip" --title $tag
+        if: steps.check.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.REL }}
+          name: ${{ env.REL }}
+          files: ${{ env.ZIP_NAME }}
