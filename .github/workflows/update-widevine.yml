@@ -18,10 +18,12 @@ jobs:
         # Extract  
         7z x edge.zip
         
-        # Get new version
-        NEW=$(jq -r '.version' Edge_Portable/Edge/*/WidevineCdm/manifest.json)
+        # Find manifest file
+        MANIFEST_FILE=$(find . -path "*/Edge_Portable/Edge/*/WidevineCdm/manifest.json")
+        WIDEVINE_DIR=$(dirname "$MANIFEST_FILE")
         
-        # Get old version
+        # Get versions
+        NEW=$(jq -r '.version' "$MANIFEST_FILE")
         OLD=""
         [ -f WidevineCdm/manifest.json ] && OLD=$(jq -r '.version' WidevineCdm/manifest.json)
         
@@ -30,7 +32,7 @@ jobs:
         # Update if different
         if [ "$NEW" != "$OLD" ]; then
           rm -rf WidevineCdm
-          cp -r Edge_Portable/Edge/*/WidevineCdm .
+          cp -r "$WIDEVINE_DIR" WidevineCdm
           git config user.name "bot"
           git config user.email "bot@github.com" 
           git add WidevineCdm
