@@ -14,16 +14,23 @@ jobs:
 
     - name: Get latest versions
       run: |
-        $chromium_url = (Invoke-RestMethod "https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest").assets[0].browser_download_url
-        $plus_ver = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").tag_name
+        # Lấy URL download Chromium
+        $chromium_release = Invoke-RestMethod "https://api.github.com/repos/Hibbiki/chromium-win64/releases/latest"
+        $chromium_url = $chromium_release.assets[0].browser_download_url
         echo "CHROMIUM_URL=$chromium_url" >> $env:GITHUB_ENV
+        
+        # Tách version từ tag_name (ví dụ: v140.0.7339.81-r1496484 -> 140.0.7339.81)
+        $chromium_tag = $chromium_release.tag_name
+        $chromium_ver = $chromium_tag -replace '^v|-r\d+$'
+        echo "CHROMIUM_VER=$chromium_ver" >> $env:GITHUB_ENV
+        
+        # Lấy version chrome_plus
+        $plus_ver = (Invoke-RestMethod "https://api.github.com/repos/Bush2021/chrome_plus/releases/latest").tag_name
         echo "PLUS_VER=$plus_ver" >> $env:GITHUB_ENV
 
     - name: Check if release exists
       run: |
-        $ver = (Get-Item "chrome.exe").VersionInfo.ProductVersion 2>$null
-        if (-not $ver) { $ver = "999.0.9999.0" } # Fallback version
-        $tag_name = "chromium-portable-x64_${ver}_${{ env.PLUS_VER }}"
+        $tag_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}"
         $release_exists = gh release view $tag_name 2>&1
         if ($LASTEXITCODE -eq 0) {
           echo "RELEASE_EXISTS=true" >> $env:GITHUB_ENV
@@ -63,16 +70,12 @@ jobs:
         cp debloater.reg Chromium_Portable/Chromium/
         cp default-apps-multi-profile.bat Chromium_Portable/Chromium/
 
-        # Lấy version Chromium
-        $ver = (Get-Item "Chromium_Portable/Chromium/chrome.exe").VersionInfo.ProductVersion
-        echo "CHROMIUM_VER=$ver" >> $env:GITHUB_ENV
-
         # Copy WidevineCdm
-        mkdir -p "Chromium_Portable/Chromium/$env:CHROMIUM_VER"
-        cp -r WidevineCdm "Chromium_Portable/Chromium/$env:CHROMIUM_VER/"
+        mkdir -p "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}"
+        cp -r WidevineCdm "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}/"
 
-        # Nén thành zip với tên đúng format
-        $zip_name = "chromium-portable-x64_$env:CHROMIUM_VER_$env:PLUS_VER.zip"
+        # Nén thành zip
+        $zip_name = "chromium-portable-x64_${{ env.CHROMIUM_VER }}_${{ env.PLUS_VER }}.zip"
         Compress-Archive -Path Chromium_Portable -DestinationPath $zip_name
         echo "ZIP_NAME=$zip_name" >> $env:GITHUB_ENV
 
