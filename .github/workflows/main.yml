@@ -49,8 +49,7 @@ jobs:
 
       - name: Copy Widevine
         run: |
-          mkdir "Chromium_Portable/Chromium/$env:CHROMIUM_VERSION"
-          Copy-Item WidevineCdm "Chromium_Portable/Chromium/$env:CHROMIUM_VERSION/" -Recurse
+          Copy-Item WidevineCdm "Chromium_Portable/Chromium/$env:CHROMIUM_VERSION/" -Recurse -Force
 
       - name: Detect chrome_plus version
         run: |
