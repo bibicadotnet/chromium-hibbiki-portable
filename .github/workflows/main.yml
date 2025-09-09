@@ -69,11 +69,4 @@ jobs:
           echo "REL=$rel" >> $env:GITHUB_ENV
           $r = (curl -sL https://api.github.com/repos/${{ github.repository }}/releases/tags/$rel)
           if ($r -notmatch 'Not Found') { echo "skip=true" >> $env:GITHUB_OUTPUT }
-
-      - name: Create release
-        if: steps.check.outputs.skip != 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.REL }}
-          name: ${{ env.REL }}
-          files: ${{ env.ZIP_NAME }}
+          else { echo "skip=false" >> $env:GITHUB_OUTPUT }
