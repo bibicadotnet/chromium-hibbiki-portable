@@ -42,7 +42,7 @@ jobs:
     - name: Check if release exists
       id: check-release
       run: |
-        $releaseName = "chromium-portable-x64_v${{ steps.chromium-version.outputs.CHROMIUM_VERSION }}_${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}"
+        $releaseName = "chromium-portable-x64_${{ steps.chromium-version.outputs.CHROMIUM_VERSION }}_${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}"
         echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_OUTPUT
         
         try {
@@ -173,24 +173,24 @@ jobs:
       run: |
         $packageName = "${{ steps.check-release.outputs.RELEASE_NAME }}"
         
-        # Create 7z archive of the entire Chromium_Portable directory
-        .\7zr.exe a -t7z "$packageName.7z" "$env:BUILD_PATH" -mx9
+        # Create ZIP archive using PowerShell's Compress-Archive
+        Compress-Archive -Path "$env:BUILD_PATH\*" -DestinationPath "$packageName.zip" -CompressionLevel Optimal
         
-        echo "PACKAGE_FILE=$packageName.7z" >> $env:GITHUB_ENV
-        Write-Host "Created package: $packageName.7z"
+        echo "PACKAGE_FILE=$packageName.zip" >> $env:GITHUB_ENV
+        Write-Host "Created package: $packageName.zip"
 
     - name: Create Release
       if: steps.check-release.outputs.RELEASE_EXISTS == 'false' || github.event.inputs.force_rebuild == 'true'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.check-release.outputs.RELEASE_NAME }}
-        name: "Chromium Portable v${{ steps.chromium-version.outputs.CHROMIUM_VERSION }} + Chrome++ v${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}"
+        name: "x64_${{ steps.chromium-version.outputs.CHROMIUM_VERSION }}_${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}"
         body: |
           ## Chromium Hibbiki Woolyss Portable with Chrome++
           
           **Versions:**
-          - Chromium: v${{ steps.chromium-version.outputs.CHROMIUM_VERSION }} (from ${{ steps.chromium-version.outputs.CHROMIUM_FULL_TAG }})
-          - Chrome++: v${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}
+          - Chromium: ${{ steps.chromium-version.outputs.CHROMIUM_VERSION }} (from ${{ steps.chromium-version.outputs.CHROMIUM_FULL_TAG }})
+          - Chrome++: ${{ steps.chromeplus-version.outputs.CHROMEPLUS_VERSION }}
           
           **Features:**
           - Portable Chromium browser (no system installation required)
@@ -199,13 +199,13 @@ jobs:
           - Registry optimizations included (debloater.reg)
           
           **Installation:**
-          1. Download and extract the 7z file
+          1. Download and extract the ZIP file
           2. Structure will be: `Chromium_Portable/Chromium/` (browser files) and `Chromium_Portable/debloater.reg`
           3. Run debloater.reg to apply registry optimizations (optional)
           4. Launch chrome.exe from the Chromium folder
           
           **Auto-built from:**
-          - [Hibbiki Chromium v${{ steps.chromium-version.outputs.CHROMIUM_FULL_TAG }}](https://github.com/Hibbiki/chromium-win64/releases/tag/${{ steps.chromium-version.outputs.CHROMIUM_FULL_TAG }})
+          - [Hibbiki Chromium ${{ steps.chromium-version.outputs.CHROMIUM_FULL_TAG }}](https://github.com/Hibbiki/chromium-win64/releases/tag/${{ steps.chromium-version.outputs.CHROMIUM_FULL_TAG }})
           - [Chrome++ Latest](https://github.com/Bush2021/chrome_plus/releases/latest)
         files: |
           ${{ env.PACKAGE_FILE }}
