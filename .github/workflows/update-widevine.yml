@@ -12,40 +12,44 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       
-    - name: Download latest release
+    - name: Download and update
       run: |
+        # Download release mới nhất
         curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases \
         | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url' \
-        | xargs curl -L -o edge.zip
+        | xargs curl -L -o release.zip
         
-    - name: Extract and check version
-      run: |
-        7z x edge.zip -odownloaded/
+        # Giải nén
+        7z x release.zip
         
-        NEW_MANIFEST=$(find downloaded -name manifest.json -path "*/WidevineCdm/*")
-        NEW_VERSION=$(jq -r '.version' "$NEW_MANIFEST")
+        # Tìm thư mục WidevineCdm trong Edge_Portable
+        WIDEVINE_PATH=$(find . -path "*/Edge_Portable/Edge/*/WidevineCdm" -type d)
         
+        # Đọc version mới
+        NEW_VERSION=$(jq -r '.version' "$WIDEVINE_PATH/manifest.json")
+        
+        # Đọc version cũ
         if [ -f "WidevineCdm/manifest.json" ]; then
           OLD_VERSION=$(jq -r '.version' "WidevineCdm/manifest.json")
         else
-          OLD_VERSION="none"
+          OLD_VERSION=""
         fi
         
-        echo "Old: $OLD_VERSION"
-        echo "New: $NEW_VERSION"
+        echo "Version cũ: $OLD_VERSION"
+        echo "Version mới: $NEW_VERSION"
         
+        # So sánh và update
         if [ "$NEW_VERSION" != "$OLD_VERSION" ]; then
-          NEW_DIR=$(dirname "$NEW_MANIFEST")
           rm -rf WidevineCdm
-          cp -r "$NEW_DIR" WidevineCdm
+          cp -r "$WIDEVINE_PATH" WidevineCdm
           
-          git config user.name "Bot"
-          git config user.email "bot@github.com"
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
           git add WidevineCdm/
           git commit -m "Update WidevineCdm to $NEW_VERSION"
           git push
           
-          echo "Updated to $NEW_VERSION"
+          echo "Đã cập nhật lên $NEW_VERSION"
         else
-          echo "Already latest version"
+          echo "Đã là version mới nhất"
         fi
