@@ -2,7 +2,7 @@ name: Update WidevineCdm
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 17 * * *'   # Chạy lúc 0h sáng VN
   workflow_dispatch:
 
 jobs:
