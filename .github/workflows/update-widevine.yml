@@ -48,7 +48,7 @@ jobs:
         if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
           echo "Updating WidevineCdm..."
           rm -rf WidevineCdm
-          cp -r ungoogled-chromium-*/ungoogled-chromium-*/WidevineCdm .
+          cp -r ungoogled-chromium-*/WidevineCdm .
           
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
