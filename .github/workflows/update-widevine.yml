@@ -29,8 +29,8 @@ jobs:
         # Extract
         ./7zr.exe x "$FILENAME"
         
-        # Get directory name
-        DIR_NAME=$(echo "$FILENAME" | sed 's/\.7z$//')
+        # Find the extracted directory
+        DIR_NAME=$(ls -d ungoogled-chromium-*_Win64)
         
         # Get new version
         NEW_VERSION=$(jq -r '.version' "$DIR_NAME/$DIR_NAME/WidevineCdm/manifest.json")
@@ -48,7 +48,7 @@ jobs:
         if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
           echo "Updating WidevineCdm..."
           rm -rf WidevineCdm
-          cp -r "$DIR_NAME/$DIR_NAME/WidevineCdm" .
+          cp -r ungoogled-chromium-*/ungoogled-chromium-*/WidevineCdm .
           
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
