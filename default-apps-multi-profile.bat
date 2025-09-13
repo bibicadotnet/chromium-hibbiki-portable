@@ -4,7 +4,7 @@
 :: CONFIGURATION SECTION - EDIT THESE VALUES
 :: ==============================================
 set "app=%~dp0"
-set "CHROMIUM_PATH=%app%browser.exe"
+set "CHROMIUM_PATH=%app%chrome.exe"
 set "PROFILE_PATH=%app%..\Data"
 set "BROWSER_NAME=Chromium Portable"
 set "BROWSER_DESC=Chromium Portable default browser with custom profile"
