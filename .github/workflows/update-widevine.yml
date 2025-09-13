@@ -35,26 +35,5 @@ jobs:
         # Get new version
         NEW_VERSION=$(jq -r '.version' "$DIR_NAME/$DIR_NAME/WidevineCdm/manifest.json")
         
-        # Get current version
-        CURRENT_VERSION=""
-        if [ -f "WidevineCdm/manifest.json" ]; then
-          CURRENT_VERSION=$(jq -r '.version' WidevineCdm/manifest.json)
-        fi
-        
-        echo "Current: $CURRENT_VERSION"
-        echo "New: $NEW_VERSION"
-        
-        # Update if different
-        if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
-          echo "Updating WidevineCdm..."
-          rm -rf WidevineCdm
-          cp -r ungoogled-chromium-*/WidevineCdm .
-          
-          git config user.name "GitHub Action"
-          git config user.email "action@github.com"
-          git add WidevineCdm/
-          git commit -m "Update WidevineCdm to $NEW_VERSION"
-          git push
-        else
-          echo "Already up to date"
-        fi
+        # Skip version check for now - just run debug
+        echo "Debug complete"
