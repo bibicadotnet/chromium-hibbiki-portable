@@ -1,7 +1,7 @@
 name: Update WidevineCdm
 on:
   schedule:
-    - cron: '0 17 * * *'   # Chạy lúc 0h sáng VN
+    - cron: '0 17 * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,24 +10,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install 7z
-      run: |
-        choco install 7zip -y
+    - name: Download 7z
+      run: curl -L https://www.7-zip.org/a/7zr.exe -o 7zr.exe
+      shell: bash
     
     - name: Download and update
       shell: bash
       run: |
-        # Get latest release URL for ungoogled-chromium
+        # Get latest ungoogled-chromium release
         URL=$(curl -s https://api.github.com/repos/macchrome/winchrome/releases | jq -r '[.[] | select(.prerelease == false)] | .[0] | .assets[] | select(.name | test("ungoogled-chromium-.*_Win64\\.7z$")) | .browser_download_url')
         
-        # Download
-        curl -L "$URL" -o ungoogled-chromium.7z
+        # Get filename
+        FILENAME=$(echo "$URL" | sed 's/.*\///')
         
-        # Extract using 7z
-        7z x ungoogled-chromium.7z
+        # Download
+        curl -L "$URL" -o "$FILENAME"
+        
+        # Extract
+        ./7zr.exe x "$FILENAME"
+        
+        # Get directory name
+        DIR_NAME=$(echo "$FILENAME" | sed 's/\.7z$//')
         
         # Get new version
-        NEW_VERSION=$(jq -r '.version' ungoogled-chromium-*/ungoogled-chromium-*/WidevineCdm/manifest.json)
+        NEW_VERSION=$(jq -r '.version' "$DIR_NAME/$DIR_NAME/WidevineCdm/manifest.json")
         
         # Get current version
         CURRENT_VERSION=""
