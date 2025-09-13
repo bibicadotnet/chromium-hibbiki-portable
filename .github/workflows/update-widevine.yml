@@ -1,5 +1,4 @@
 name: Update WidevineCdm
-
 on:
   schedule:
     - cron: '0 17 * * *'   # Chạy lúc 0h sáng VN
@@ -11,20 +10,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install 7z
+      run: |
+        choco install 7zip -y
+    
     - name: Download and update
       shell: bash
       run: |
-        # Get latest release URL
-        URL=$(curl -s https://api.github.com/repos/bibicadotnet/microsoft-edge-multi-portable/releases | jq -r '[.[] | select(.tag_name | contains("edge-canary-portable-x64"))] | .[0] | .assets[0].browser_download_url')
+        # Get latest release URL for ungoogled-chromium
+        URL=$(curl -s https://api.github.com/repos/macchrome/winchrome/releases | jq -r '[.[] | select(.prerelease == false)] | .[0] | .assets[] | select(.name | test("ungoogled-chromium-.*_Win64\\.7z$")) | .browser_download_url')
         
         # Download
-        curl -L "$URL" -o edge.zip
+        curl -L "$URL" -o ungoogled-chromium.7z
         
-        # Extract
-        powershell -command "Expand-Archive -Path edge.zip -DestinationPath . -Force"
+        # Extract using 7z
+        7z x ungoogled-chromium.7z
         
         # Get new version
-        NEW_VERSION=$(jq -r '.version' Edge_Portable/Edge/*/WidevineCdm/manifest.json)
+        NEW_VERSION=$(jq -r '.version' ungoogled-chromium-*/ungoogled-chromium-*/WidevineCdm/manifest.json)
         
         # Get current version
         CURRENT_VERSION=""
@@ -39,7 +42,7 @@ jobs:
         if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
           echo "Updating WidevineCdm..."
           rm -rf WidevineCdm
-          cp -r Edge_Portable/Edge/*/WidevineCdm .
+          cp -r "$DIR_NAME/$DIR_NAME/WidevineCdm" .
           
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
