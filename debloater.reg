@@ -95,9 +95,7 @@ Windows Registry Editor Version 5.00
 "SafeBrowsingExtendedReportingEnabled"=dword:00000000
 
 ; Cấu hình Cloudflare Gateway DNS hỗ trợ ECS (chặn quảng cáo bởi bộ lọc AdGuard và ABPVN)
-; https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
-; https://adguardteam.github.io/HostlistsRegistry/assets/filter_16.txt
-"DnsOverHttpsMode"="automatic"
+"DnsOverHttpsMode"="secure"
 "DnsOverHttpsTemplates"="https://iabucttpma.cloudflare-gateway.com/dns-query{?dns}"
 
 ; Hiển thị đầy đủ URL trên thanh địa chỉ
