@@ -31,9 +31,6 @@ Windows Registry Editor Version 5.00
 ; Tắt Máy tạo mã QR
 "QRCodeGeneratorEnabled"=dword:00000000
 
-; Tắt Hỗ trợ tập hợp các trang web liên quan
-"RelatedWebsiteSetsEnabled"=dword:00000000
-
 ; Tắt Gỡ lỗi từ xa
 "RemoteDebuggingAllowed"=dword:00000000
 
@@ -80,9 +77,6 @@ Windows Registry Editor Version 5.00
 "BackgroundModeEnabled"=dword:00000000
 
 ; Tắt Ad topics Site-suggested ads Ad measurement
-"PrivacySandboxAdTopicsEnabled"=dword:00000000
-"PrivacySandboxAdMeasurementEnabled"=dword:00000000
-"PrivacySandboxSiteEnabledAdsEnabled"=dword:00000000
 "PrivacySandboxPromptEnabled"=dword:00000000
 
 ; Tắt Spell check / Kiểm tra chính tả
@@ -133,9 +127,6 @@ Windows Registry Editor Version 5.00
 
 ; Tắt rò rỉ IP WebRTC bằng cách thiết lập WebRtcIPHandling thành disable_non_proxied_udp
 "WebRtcIPHandling"="disable_non_proxied_udp"
-
-; Không cho phép các trang web liên quan xem hoạt động của bạn trong nhóm
-"RelatedWebsiteSetsEnabled"=dword:00000000
 
 ; Automatically switch to more secure connections with Automatic HTTPS - Always use secure connections
 "HttpsUpgradesEnabled"=dword:00000001
