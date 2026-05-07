@@ -22,6 +22,7 @@ Trên phiên bản portable, tôi chỉ thêm vào Chrome++, giúp phiên bản 
 - `debloater.reg`: Loại bỏ các tính năng không cần thiết của Chromium
 - `default-apps-multi-profile.bat`: Đặt Chromium làm trình duyệt mặc định
 - `update.bat`: Cập nhật lên phiên bản mới nhất
+- `bypass_windows_defender.bat`: Thêm/xóa thư mục khỏi danh sách loại trừ Windows Defender
 
 ### Download
 
