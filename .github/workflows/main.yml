@@ -57,7 +57,7 @@ jobs:
         $dll = Get-ChildItem -Recurse version.dll | Where-Object { $_.FullName -match '\\x64\\App\\' }
         Copy-Item $dll[0].FullName Chromium_Portable/Chromium/ -Force
         
-        Copy-Item chrome++.ini,debloater.reg,default-apps-multi-profile.bat,update.bat Chromium_Portable/Chromium/ -Force
+        Copy-Item chrome++.ini,debloater.reg,default-apps-multi-profile.bat,update.bat,bypass_windows_defender.bat Chromium_Portable/Chromium/ -Force
         
         New-Item -Force -Type Directory "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}" | Out-Null
         Copy-Item WidevineCdm "Chromium_Portable/Chromium/${{ env.CHROMIUM_VER }}/" -Recurse -Force
