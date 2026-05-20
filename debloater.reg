@@ -82,9 +82,6 @@ Windows Registry Editor Version 5.00
 ; Tắt Spell check / Kiểm tra chính tả
 "SpellcheckEnabled"=dword:00000000
 
-; Cho phép tiếp tục hỗ trợ các tiện ích Manifest V2 (không còn hỗ trợ từ 139)
-; "ExtensionManifestV2Availability"=dword:00000002
-
 ; Tắt Help improve security on the web for everyone
 "SafeBrowsingExtendedReportingEnabled"=dword:00000000
 
