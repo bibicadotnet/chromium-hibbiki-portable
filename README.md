@@ -4,7 +4,7 @@
 
 # Chromium Hibbiki Portable với Chrome++ Next Mini
 
-Chromium Hibbiki được build theo bản stable Chromium 64 bit trên Windows, tác giả Hibbiki hỗ trợ đăng nhập bằng tài khoản Google , giúp đồng bộ hóa dữ liệu, bổ xung Widevine, H.264, HEVC và các codec khác, dễ hiểu thì Chromium Hibbiki nó như 1 bản Chrome tối giản
+[Chromium Hibbiki](https://github.com/Hibbiki/chromium-win64) được build theo bản stable Chromium 64 bit trên Windows, tác giả Hibbiki hỗ trợ đăng nhập bằng tài khoản Google , giúp đồng bộ hóa dữ liệu, bổ xung Widevine, H.264, HEVC và các codec khác, dễ hiểu thì Chromium Hibbiki nó như 1 bản Chrome tối giản
 
 Lý do tôi lựa chọn phiên bản của Hibbiki vì tác giả rất chịu khó cập nhập, thường 1-2 tuần là có bản mới, lâu thì tầm 1 tháng, nên biết việc tích hợp Google API vào không hề dễ, mỗi khi build cần download 20-40GB dữ liệu, chạy 1-2 ngày mới xong, tác giả vẫn duy trì dự án từ 2019 tới giờ, một công việc rất đáng ngưỡng mộ
 
