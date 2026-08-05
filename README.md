@@ -31,3 +31,7 @@ Trên phiên bản portable, chỉ thêm vào Chrome++ Next Mini, giúp phiên b
 </p>
 
 Download nhanh gọn từ trang [home](https://chromium.bibica.net/), mặc định hiển thị 5 nhánh gần nhất
+
+### Note
+
+- Kể từ 06/08/2026, đổi sang sử dụng [Chrome++ Next Mini](https://github.com/bibicadotnet/chrome-next-mini) để toàn quyền quản lý toàn bộ dự án
