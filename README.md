@@ -15,7 +15,7 @@ Trên phiên bản portable, chỉ thêm vào Chrome++ Next Mini, giúp phiên b
 - Phiên bản Chromium Hibbiki độ ổn định cao, sử dụng tài nguyên CPU và RAM vừa phải
 - Hỗ trợ đăng nhập bằng tài khoản Google và đồng bộ hóa dữ liệu
 - Hỗ trợ Widevine, H.264, HEVC và các codec độc quyền khác (không bị lỗi liên quan tới DRM)
-- `debloater.reg` tăng thêm một chút quyền riêng tư, dễ dàng tùy chỉnh theo nhu cầu cá nhân
+- Tăng thêm một chút quyền riêng tư, dễ dàng tùy chỉnh theo nhu cầu cá nhân
 
 ### Các file và công dụng​
 - `chrome++.ini`: File cấu hình cho [Chrome++ Next Mini](https://github.com/bibicadotnet/chrome-next-mini)
