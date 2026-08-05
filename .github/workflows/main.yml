@@ -16,9 +16,9 @@ jobs:
         $chromium = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/chromium-hibbiki/releases/latest"
         $chromium_ver = $chromium.tag_name -replace '^v','' -replace '-r\d+$',''
         
-        $plus = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/Chromium_SetDLL/releases/latest"
+        $plus = Invoke-RestMethod "https://api.github.com/repos/bibicadotnet/chrome-next-mini/releases/latest"
         $plus_ver = $plus.tag_name -replace '^v',''
-        $plus_url = ($plus.assets | Where-Object { $_.name -like "Chrome*.7z" }).browser_download_url
+        $plus_url = ($plus.assets | Where-Object { $_.name -like "edge_portable-v*.zip" }).browser_download_url
         
         $tag = "chromium-portable-x64_${chromium_ver}_${plus_ver}"
         
@@ -44,18 +44,18 @@ jobs:
       if: env.EXISTS == 'false'
       run: |
         curl -sSL "${{ env.CHROMIUM_URL }}" -o chrome.7z
-        curl -sSL "${{ env.PLUS_URL }}" -o chrome_plus.7z
+        curl -sSL "${{ env.PLUS_URL }}" -o chrome_plus.zip
         curl -sSL https://www.7-zip.org/a/7zr.exe -o 7zr.exe
         
         ./7zr.exe x chrome.7z
-        ./7zr.exe x chrome_plus.7z
+        Expand-Archive chrome_plus.zip -DestinationPath chrome_plus -Force
         
         New-Item -Force -Type Directory Chromium_Portable | Out-Null
         Rename-Item Chrome-bin Chromium
         Move-Item Chromium Chromium_Portable/
         
-        $dll = Get-ChildItem -Recurse version.dll | Where-Object { $_.FullName -match '\\x64\\App\\' }
-        Copy-Item $dll[0].FullName Chromium_Portable/Chromium/ -Force
+        $dll = Get-ChildItem -Path chrome_plus -Recurse -Filter version.dll | Select-Object -First 1
+        Copy-Item $dll.FullName Chromium_Portable/Chromium/ -Force
         
         Copy-Item chrome++.ini,debloater.reg,default-apps-multi-profile.bat,update.bat,bypass_windows_defender.bat Chromium_Portable/Chromium/ -Force
         
