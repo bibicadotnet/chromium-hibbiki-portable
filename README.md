@@ -2,13 +2,13 @@
 <img src="https://img.bibica.net/qfd6WGhC.png">
 </p>
 
-# Chromium Hibbiki Portable Debloat với Chrome++ Next Mini
+# Chromium Hibbiki Portable với Chrome++ Next Mini
 
 Chromium Hibbiki được build theo bản stable Chromium 64 bit trên Windows, tác giả Hibbiki hỗ trợ đăng nhập bằng tài khoản Google , giúp đồng bộ hóa dữ liệu, bổ xung Widevine, H.264, HEVC và các codec khác, dễ hiểu thì Chromium Hibbiki nó như 1 bản Chrome tối giản
 
 Lý do tôi lựa chọn phiên bản của Hibbiki vì tác giả rất chịu khó cập nhập, thường 1-2 tuần là có bản mới, lâu thì tầm 1 tháng, nên biết việc tích hợp Google API vào không hề dễ, mỗi khi build cần download 20-40GB dữ liệu, chạy 1-2 ngày mới xong, tác giả vẫn duy trì dự án từ 2019 tới giờ, một công việc rất đáng ngưỡng mộ
 
-Trên phiên bản portable, tôi chỉ thêm vào Chrome++ Next Mini, giúp phiên bản này trở thành bản di động, `debloater.reg` cơ bản là không cần, vì Chromium nguyên bản đã rất sạch sẽ, cá nhân để vào, vì quen dùng là chính :]]
+Trên phiên bản portable, chỉ thêm vào Chrome++ Next Mini, giúp phiên bản này trở thành bản di động, `debloater.reg` cơ bản là không cần, vì Chromium nguyên bản đã rất sạch sẽ, cá nhân để vào, vì quen dùng là chính :]]
 
 ### Tính năng
 - Chromium Hibbiki Portable với tất cả dữ liệu được lưu trữ cục bộ
