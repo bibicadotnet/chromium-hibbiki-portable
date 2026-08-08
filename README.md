@@ -12,9 +12,9 @@ Trên phiên bản portable, chỉ thêm vào Chrome++ Next Mini, giúp phiên b
 
 ### Tính năng
 - Chromium Hibbiki Portable với tất cả dữ liệu được lưu trữ cục bộ
-- Phiên bản Chromium Hibbiki độ ổn định cao, sử dụng tài nguyên CPU và RAM vừa phải
+- Phiên bản Chromium Hibbiki độ ổn định cao, sạch, nhẹ tự nhiên
 - Hỗ trợ đăng nhập bằng tài khoản Google và đồng bộ hóa dữ liệu
-- Hỗ trợ Widevine, H.264, HEVC và các codec độc quyền khác (không bị lỗi liên quan tới DRM)
+- Hỗ trợ Widevine, H.264, HEVC và các codec độc quyền khác
 - Tăng thêm một chút quyền riêng tư, dễ dàng tùy chỉnh theo nhu cầu cá nhân
 
 ### Các file và công dụng​
